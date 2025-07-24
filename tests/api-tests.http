@@ -1,0 +1,298 @@
+### Grey Wallet API Tests
+### Use with VS Code REST Client extension or similar tools
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ========================================
+### HEALTH CHECK
+### ========================================
+
+GET {{baseUrl}}/health
+Content-Type: {{contentType}}
+
+### ========================================
+### SIGN UP TESTS
+### ========================================
+
+### 1. Valid Sign Up
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "muhindi.kn@gmail.com",
+  "phone": "+1234567890",
+  "password": "TestPassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "country": "United States",
+  "currency": "USD"
+}
+
+### 2. Another Valid Sign Up (Different User)
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "kmuhindi@proton.me",
+  "phone": "+1987654321",
+  "password": "SecurePass456!",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "country": "Canada",
+  "currency": "CAD"
+}
+
+### 3. Sign Up with Different Currency
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "mike.wilson@example.com",
+  "phone": "+254700123456",
+  "password": "KenyaPass789!",
+  "firstName": "Mike",
+  "lastName": "Wilson",
+  "country": "Kenya",
+  "currency": "KES"
+}
+
+### ========================================
+### VALIDATION ERROR TESTS
+### ========================================
+
+### 4. Invalid Email
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "invalid-email",
+  "phone": "+1234567890",
+  "password": "TestPassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "country": "United States",
+  "currency": "USD"
+}
+
+### 5. Weak Password
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "weak@example.com",
+  "phone": "+1234567890",
+  "password": "123",
+  "firstName": "John",
+  "lastName": "Doe",
+  "country": "United States",
+  "currency": "USD"
+}
+
+### 6. Invalid Phone Number
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "invalid@example.com",
+  "phone": "not-a-phone",
+  "password": "TestPassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "country": "United States",
+  "currency": "USD"
+}
+
+### 7. Invalid Currency
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "invalid@example.com",
+  "phone": "+1234567890",
+  "password": "TestPassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "country": "United States",
+  "currency": "INVALID"
+}
+
+### 8. Missing Required Fields
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "incomplete@example.com",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### DUPLICATE USER TESTS
+### ========================================
+
+### 9. Duplicate Email (should fail)
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "john.doe@example.com",
+  "phone": "+9999999999",
+  "password": "DifferentPassword123!",
+  "firstName": "Different",
+  "lastName": "User",
+  "country": "United Kingdom",
+  "currency": "GBP"
+}
+
+### 10. Duplicate Phone (should fail)
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "different@example.com",
+  "phone": "+1234567890",
+  "password": "DifferentPassword123!",
+  "firstName": "Different",
+  "lastName": "User",
+  "country": "United Kingdom",
+  "currency": "GBP"
+}
+
+### ========================================
+### SIGN IN TESTS (when implemented)
+### ========================================
+
+### 11. Valid Sign In
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "muhindi.kn@gmail.com",
+  "password": "TestPassword123!"
+}
+
+### 12. Invalid Credentials
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "john.doe@example.com",
+  "password": "WrongPassword123!"
+}
+
+### 13. Non-existent User
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "nonexistent@example.com",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### VERIFICATION TESTS (when implemented)
+### ========================================
+
+### 14. Email Verification
+POST {{baseUrl}}/api/auth/verify-email
+Content-Type: {{contentType}}
+
+{
+  "userId": "d4550b67-5bcf-4c1d-971d-ecd6e7c22b49",
+  "token": "91ba1f71c8ced9f455aaadcd344b3c2a2a5432392a007a1d43b47fd252d95737"
+}
+
+### 15. SMS Verification
+POST {{baseUrl}}/api/auth/verify-sms
+Content-Type: {{contentType}}
+
+{
+  "userId": "d4550b67-5bcf-4c1d-971d-ecd6e7c22b49",
+  "token": "058023"
+}
+
+### ========================================
+### PASSWORD RESET TESTS (when implemented)
+### ========================================
+
+### 16. Password Reset Request
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: {{contentType}}
+
+{
+  "email": "john.doe@example.com"
+}
+
+### ========================================
+### USER PROFILE TESTS (when implemented)
+### ========================================
+
+### 17. Get Current User Profile
+GET {{baseUrl}}/api/auth/me
+Content-Type: {{contentType}}
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### ========================================
+### WALLET TESTS (when implemented)
+### ========================================
+
+### 18. Get Wallet Information
+GET {{baseUrl}}/api/wallet
+Content-Type: {{contentType}}
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 19. Get Wallet Addresses
+GET {{baseUrl}}/api/wallet/addresses
+Content-Type: {{contentType}}
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### ========================================
+### USER TESTS (when implemented)
+### ========================================
+
+### 20. Get User Profile
+GET {{baseUrl}}/api/user
+Content-Type: {{contentType}}
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### ========================================
+### ENVIRONMENT VARIABLES
+### ========================================
+
+### You can set these variables in your REST Client settings
+### or use them directly in requests
+
+@testEmail = test@example.com
+@testPhone = +1234567890
+@testPassword = TestPassword123!
+@testFirstName = John
+@testLastName = Doe
+@testCountry = United States
+@testCurrency = USD
+
+### ========================================
+### QUICK TEST TEMPLATES
+### ========================================
+
+### Quick Sign Up Template
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "{{testEmail}}",
+  "phone": "{{testPhone}}",
+  "password": "{{testPassword}}",
+  "firstName": "{{testFirstName}}",
+  "lastName": "{{testLastName}}",
+  "country": "{{testCountry}}",
+  "currency": "{{testCurrency}}"
+}
+
+### Quick Sign In Template
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+} 

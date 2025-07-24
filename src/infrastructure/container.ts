@@ -1,0 +1,178 @@
+/**
+ * Dependency Injection Container
+ * Manages service instantiation and configuration
+ */
+
+import { UserRepository } from '../domain/repositories/user-repository';
+import { WalletRepository } from '../domain/repositories/wallet-repository';
+import { TokenRepository } from '../domain/repositories/token-repository';
+import { VaultService } from '../application/interfaces/vault-service';
+import { NotificationService } from '../application/interfaces/notification-service';
+import { CryptoService } from '../application/interfaces/crypto-service';
+
+// Import implementations
+import { MockUserRepository } from './repositories/mock-user-repository';
+import { MockWalletRepository } from './repositories/mock-wallet-repository';
+import { MockTokenRepository } from './repositories/mock-token-repository';
+import { MockVaultService } from './services/mock-vault-service';
+import { MockNotificationService } from './services/mock-notification-service';
+import { MockCryptoService } from './services/mock-crypto-service';
+
+// Import service factory
+import { ServiceFactory } from './factories/service-factory';
+
+// Import use cases
+import { SignUpUseCase } from '../domain/use_cases/sign-up';
+import { SupabaseSignUpUseCase } from '../domain/use_cases/sign-up-supabase';
+
+// Import controllers
+import { AuthController } from '../presentation/controllers/auth-controller';
+import { SupabaseAuthController } from '../presentation/controllers/auth-controller-supabase';
+
+// Import Supabase service
+import { SupabaseAuthService } from './external_apis/supabase-auth';
+
+export class Container {
+  private static instance: Container;
+  private services: Map<string, any> = new Map();
+
+  private constructor() {
+    this.initializeServices();
+  }
+
+  public static getInstance(): Container {
+    if (!Container.instance) {
+      Container.instance = new Container();
+    }
+    return Container.instance;
+  }
+
+  private initializeServices(): void {
+    const environment = process.env['NODE_ENV'] || 'development';
+    const useMocks = process.env['USE_MOCKS'] === 'true' || environment === 'test';
+
+    if (useMocks) {
+      this.initializeMockServices();
+    } else {
+      this.initializeRealServices();
+    }
+  }
+
+  private initializeMockServices(): void {
+    // Initialize mock repositories
+    this.services.set('UserRepository', new MockUserRepository());
+    this.services.set('WalletRepository', new MockWalletRepository());
+    this.services.set('TokenRepository', new MockTokenRepository());
+
+    // Initialize mock services
+    this.services.set('VaultService', new MockVaultService());
+    this.services.set('NotificationService', new MockNotificationService());
+    this.services.set('CryptoService', new MockCryptoService());
+
+    // Initialize use cases
+    this.services.set('SignUpUseCase', new SignUpUseCase(
+      this.services.get('UserRepository'),
+      this.services.get('WalletRepository'),
+      this.services.get('TokenRepository'),
+      this.services.get('VaultService'),
+      this.services.get('NotificationService'),
+      this.services.get('CryptoService')
+    ));
+
+    // Initialize controllers
+    this.services.set('AuthController', new AuthController(
+      this.services.get('SignUpUseCase')
+    ));
+  }
+
+  private initializeRealServices(): void {
+    try {
+      // Initialize real repositories
+      this.services.set('UserRepository', ServiceFactory.createUserRepository());
+      this.services.set('WalletRepository', ServiceFactory.createWalletRepository());
+      this.services.set('TokenRepository', ServiceFactory.createTokenRepository());
+
+      // Initialize real services
+      this.services.set('VaultService', ServiceFactory.createVaultService());
+      this.services.set('NotificationService', ServiceFactory.createNotificationService());
+      this.services.set('CryptoService', ServiceFactory.createCryptoService());
+
+      // Initialize use cases
+      this.services.set('SignUpUseCase', new SignUpUseCase(
+        this.services.get('UserRepository'),
+        this.services.get('WalletRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('VaultService'),
+        this.services.get('NotificationService'),
+        this.services.get('CryptoService')
+      ));
+
+      // Initialize controllers
+      this.services.set('AuthController', new AuthController(
+        this.services.get('SignUpUseCase')
+      ));
+
+    } catch (error) {
+      console.warn('⚠️  Real service implementations not yet available. Falling back to mocks.');
+      console.warn(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.initializeMockServices();
+    }
+  }
+
+  public get<T>(serviceName: string): T {
+    const service = this.services.get(serviceName);
+    if (!service) {
+      throw new Error(`Service '${serviceName}' not found in container`);
+    }
+    return service as T;
+  }
+
+  public getAuthController(): AuthController {
+    return this.get<AuthController>('AuthController');
+  }
+
+  public getSupabaseAuthController(): SupabaseAuthController {
+    // Initialize Supabase services if not already done
+    if (!this.services.has('SupabaseAuthService')) {
+      this.services.set('SupabaseAuthService', new SupabaseAuthService());
+    }
+
+    if (!this.services.has('SupabaseSignUpUseCase')) {
+      this.services.set('SupabaseSignUpUseCase', new SupabaseSignUpUseCase(
+        this.services.get('SupabaseAuthService'),
+        this.services.get('WalletRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('VaultService'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('SupabaseAuthController')) {
+      this.services.set('SupabaseAuthController', new SupabaseAuthController(
+        this.services.get('SupabaseSignUpUseCase'),
+        this.services.get('SupabaseAuthService')
+      ));
+    }
+
+    return this.get<SupabaseAuthController>('SupabaseAuthController');
+  }
+
+  public getRepositories() {
+    return {
+      userRepository: this.get<UserRepository>('UserRepository'),
+      walletRepository: this.get<WalletRepository>('WalletRepository'),
+      tokenRepository: this.get<TokenRepository>('TokenRepository'),
+    };
+  }
+
+  public getServices() {
+    return {
+      vaultService: this.get<VaultService>('VaultService'),
+      notificationService: this.get<NotificationService>('NotificationService'),
+      cryptoService: this.get<CryptoService>('CryptoService'),
+    };
+  }
+}
+
+// Export singleton instance
+export const container = Container.getInstance(); 

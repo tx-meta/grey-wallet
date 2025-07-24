@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id              String   @id @default(uuid())
+    email           String   @unique
+    phone           String   @unique
+    passwordHash    String
+    country         String
+    currency        String
+    firstName       String
+    lastName        String
+    isEmailVerified Boolean  @default(false)
+    isPhoneVerified Boolean  @default(false)
+    isActive        Boolean  @default(true)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    // Relations
+    wallet Wallet?
+
+    @@map("users")
+}
+
+model Wallet {
+    walletId      String   @id @default(uuid())
+    userId        String   @unique
+    addressListId String   @unique
+    walletBalance Float    @default(0)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    // Relations
+    user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    addressList AddressList[]
+
+    @@map("wallets")
+}
+
+model AddressList {
+    id           String   @id @default(uuid())
+    walletId     String
+    tokenId      String
+    address      String
+    tokenBalance Float    @default(0)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relations
+    wallet         Wallet         @relation(fields: [walletId], references: [walletId], onDelete: Cascade)
+    supportedToken SupportedToken @relation(fields: [tokenId], references: [tokenId])
+
+    @@unique([walletId, tokenId])
+    @@map("address_list")
+}
+
+model SupportedToken {
+    tokenId   String   @id @default(uuid())
+    name      String
+    symbol    String   @unique
+    icon      String
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    addressList AddressList[]
+    Transaction Transaction[]
+
+    @@map("supported_tokens")
+}
+
+model Transaction {
+    transactionId        String   @id @default(uuid())
+    transactionDirection String
+    paymentType          String
+    from                 String
+    to                   String
+    amount               Float
+    tokenId              String?
+    status               String   @default("pending")
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
+
+    // Relations
+    supportedToken SupportedToken? @relation(fields: [tokenId], references: [tokenId])
+
+    @@map("transactions")
+}
+
+model TransactionDirection {
+    id    String @id @default(uuid())
+    name  String @unique
+    label String
+
+    @@map("transaction_directions")
+}
+
+model PaymentType {
+    id    String @id @default(uuid())
+    name  String @unique
+    label String
+
+    @@map("payment_types")
+}
