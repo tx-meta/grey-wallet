@@ -5,11 +5,15 @@
 
 import { Wallet } from '../entities/wallet';
 import { SupportedToken } from '../entities/supported-token';
+import { User } from '../entities/user';
+import { UserRepository } from '../repositories/user-repository';
 import { WalletRepository } from '../repositories/wallet-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { VaultService } from '../../application/interfaces/vault-service';
 import { NotificationService } from '../../application/interfaces/notification-service';
 import { SupabaseAuthService, SignUpData } from '../../infrastructure/external_apis/supabase-auth';
+import { generateMnemonic, encryptMnemonic, decryptMnemonic } from '../../shared/utils/crypto';
+import { getDerivationStrategy } from '../derivation/DerivationRegistry';
 
 export interface SignUpRequest {
   email: string;
@@ -32,7 +36,7 @@ export interface SignUpResponse {
     phone: string;
     createdAt: string;
   };
-  wallet: Wallet;
+  addresses: { tokenSymbol: string; address: string }[];
   requiresEmailConfirmation: boolean;
 }
 
@@ -45,6 +49,7 @@ export interface SignUpResult {
 export class SignUpUseCase {
   constructor(
     private supabaseAuthService: SupabaseAuthService,
+    private userRepository: UserRepository,
     private walletRepository: WalletRepository,
     private tokenRepository: TokenRepository,
     private vaultService: VaultService,
@@ -91,16 +96,41 @@ export class SignUpUseCase {
         };
       }
 
-      // 3. Get supported tokens
+      // 3. Create local user record for wallet management
+      const localUser = User.create({
+        email: signUpData.email,
+        phone: signUpData.phone,
+        passwordHash: 'supabase_auth_only', // Placeholder since we don't store passwords locally
+        country: signUpData.country,
+        currency: signUpData.currency,
+        firstName: signUpData.firstName,
+        lastName: signUpData.lastName,
+      });
+      
+      // Override the ID to match Supabase user ID for consistency
+      const userWithSupabaseId = new User({
+        ...localUser.toJSON(),
+        id: supabaseUser.id,
+      });
+      
+      try {
+        await this.userRepository.save(userWithSupabaseId);
+        console.log('✅ Local user record created successfully:', userWithSupabaseId.id);
+      } catch (error) {
+        console.error('❌ Failed to create local user record:', error);
+        throw error;
+      }
+
+      // 4. Get supported tokens
       const supportedTokens = await this.tokenRepository.findActiveTokens();
 
-      // 4. Create wallet and addresses for each token
-      const wallet = await this.createWalletWithAddresses(supabaseUser.id, supportedTokens);
+      // 5. Create user addresses from pooled wallets
+      const userAddresses = await this.createUserAddressesFromPooledWallets(supabaseUser.id, supportedTokens);
 
-      // 5. Send welcome notifications
+      // 6. Send welcome notifications
       await this.sendWelcomeNotifications(supabaseUser, signUpData);
 
-      // 6. Prepare response
+      // 7. Prepare response
       const responseData: SignUpResponse = {
         user: {
           id: supabaseUser.id,
@@ -112,7 +142,7 @@ export class SignUpUseCase {
           phone: signUpData.phone,
           createdAt: supabaseUser.created_at,
         },
-        wallet,
+        addresses: userAddresses,
         requiresEmailConfirmation: !supabaseUser.email_confirmed_at || false,
       };
 
@@ -158,37 +188,61 @@ export class SignUpUseCase {
     }
   }
 
-  private async createWalletWithAddresses(userId: string, tokens: SupportedToken[]): Promise<Wallet> {
-    // Create wallet
-    const wallet = Wallet.create(userId, crypto.randomUUID());
+  private async createUserAddressesFromPooledWallets(userId: string, tokens: SupportedToken[]): Promise<{ tokenSymbol: string; address: string }[]> {
+    const network = (process.env['WALLET_NETWORK'] === 'mainnet' ? 'mainnet' : 'testnet') as 'mainnet' | 'testnet';
+    const userAddresses = [];
 
-    // For each supported token, create addresses and store in vault
     for (const token of tokens) {
-      await this.createTokenAddresses(wallet, token);
+      // 1. Get or create the pooled wallet for this token
+      let wallet = await this.walletRepository.findByTokenSymbol(token.symbol);
+      
+      if (!wallet) {
+        // Create new pooled wallet for this token
+        wallet = Wallet.create(token.symbol);
+        wallet = await this.walletRepository.save(wallet);
+        
+        // Generate and store mnemonic for this wallet
+        const mnemonic = generateMnemonic();
+        const secret = process.env['WALLET_ENCRYPTION_SECRET'] || 'default_secret';
+        const { encrypted, iv, tag } = encryptMnemonic(mnemonic, secret);
+        const encryptedMnemonic = JSON.stringify({ encrypted, iv, tag });
+        
+        // Store in vault with token symbol as key
+        await this.vaultService.storeWalletMnemonic(token.symbol, encryptedMnemonic);
+      }
+
+      // 2. Get the mnemonic for this wallet from vault
+      const encryptedMnemonic = await this.vaultService.getWalletMnemonic(token.symbol);
+      if (!encryptedMnemonic) {
+        throw new Error(`No mnemonic found for token: ${token.symbol}`);
+      }
+
+      // 3. Decrypt the mnemonic
+      const secret = process.env['WALLET_ENCRYPTION_SECRET'] || 'default_secret';
+      const { encrypted, iv, tag } = JSON.parse(encryptedMnemonic);
+      const mnemonic = decryptMnemonic(encrypted, iv, tag, secret);
+
+      // 4. Get the next address index for this wallet
+      const accountIndex = await this.walletRepository.getAndIncrementAddressIndex(wallet.walletId);
+      
+      // 5. Derive the address using the strategy
+      const strategy = getDerivationStrategy(token.symbol);
+      if (!strategy) {
+        throw new Error(`No derivation strategy for token: ${token.symbol}`);
+      }
+      
+      const address = await strategy.deriveAddress(mnemonic, token, network, accountIndex);
+      
+      // 6. Save the user address
+      await this.walletRepository.addUserAddress(userId, wallet.walletId, address);
+      
+      userAddresses.push({
+        tokenSymbol: token.symbol,
+        address,
+      });
     }
 
-    // Save wallet to database
-    return await this.walletRepository.save(wallet);
-  }
-
-  private async createTokenAddresses(wallet: Wallet, token: SupportedToken): Promise<void> {
-    // Generate addresses for each token using key derivation
-    const addresses = await this.generateTokenAddresses(wallet.walletId, token.symbol);
-
-    // Store addresses and private keys in vault
-    await this.vaultService.storeWalletKeys(wallet.walletId, token.symbol, addresses);
-  }
-
-  private async generateTokenAddresses(_walletId: string, tokenSymbol: string): Promise<any[]> {
-    // This would integrate with actual crypto libraries for key derivation
-    // For now, returning mock data structure
-    return [
-      {
-        address: `mock_${tokenSymbol}_address_1`,
-        privateKey: `mock_${tokenSymbol}_private_key_1`,
-        derivationIndex: 0,
-      },
-    ];
+    return userAddresses;
   }
 
   private async sendWelcomeNotifications(supabaseUser: any, userData: SignUpData): Promise<void> {

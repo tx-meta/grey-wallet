@@ -69,21 +69,54 @@ export class Container {
   }
 
   private initializeRealServices(): void {
+    // Initialize real repositories (these are available)
     try {
-      // Initialize real repositories
       this.services.set('UserRepository', ServiceFactory.createUserRepository());
-      this.services.set('WalletRepository', ServiceFactory.createWalletRepository());
-      this.services.set('TokenRepository', ServiceFactory.createTokenRepository());
-
-      // Initialize real services
-      this.services.set('VaultService', ServiceFactory.createVaultService());
-      this.services.set('NotificationService', ServiceFactory.createNotificationService());
-      this.services.set('CryptoService', ServiceFactory.createCryptoService());
-
+      console.log('✅ UserRepository initialized with real implementation');
     } catch (error) {
-      console.warn('⚠️  Real service implementations not yet available. Falling back to mocks.');
-      console.warn(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      this.initializeMockServices();
+      console.warn('⚠️  Real UserRepository not available, using mock');
+      this.services.set('UserRepository', new MockUserRepository());
+    }
+
+    try {
+      this.services.set('WalletRepository', ServiceFactory.createWalletRepository());
+      console.log('✅ WalletRepository initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real WalletRepository not available, using mock');
+      this.services.set('WalletRepository', new MockWalletRepository());
+    }
+
+    try {
+      this.services.set('TokenRepository', ServiceFactory.createTokenRepository());
+      console.log('✅ TokenRepository initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real TokenRepository not available, using mock');
+      this.services.set('TokenRepository', new MockTokenRepository());
+    }
+
+    // Initialize real services (these are not available yet)
+    try {
+      this.services.set('VaultService', ServiceFactory.createVaultService());
+      console.log('✅ VaultService initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real VaultService not available, using mock');
+      this.services.set('VaultService', new MockVaultService());
+    }
+
+    try {
+      this.services.set('NotificationService', ServiceFactory.createNotificationService());
+      console.log('✅ NotificationService initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real NotificationService not available, using mock');
+      this.services.set('NotificationService', new MockNotificationService());
+    }
+
+    try {
+      this.services.set('CryptoService', ServiceFactory.createCryptoService());
+      console.log('✅ CryptoService initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real CryptoService not available, using mock');
+      this.services.set('CryptoService', new MockCryptoService());
     }
   }
 
@@ -106,6 +139,7 @@ export class Container {
     if (!this.services.has('SignUpUseCase')) {
       this.services.set('SignUpUseCase', new SignUpUseCase(
         this.services.get('SupabaseAuthService'),
+        this.services.get('UserRepository'),
         this.services.get('WalletRepository'),
         this.services.get('TokenRepository'),
         this.services.get('VaultService'),

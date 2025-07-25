@@ -42,7 +42,7 @@ export class AuthController {
         return;
       }
 
-      const { user, wallet, requiresEmailConfirmation } = result.data!;
+      const { user, addresses, requiresEmailConfirmation } = result.data!;
       
       const responseData = {
         user: {
@@ -55,11 +55,10 @@ export class AuthController {
           phone: user.phone,
           createdAt: user.createdAt,
         },
-        wallet: {
-          walletId: wallet.walletId,
-          walletBalance: wallet.walletBalance,
-          createdAt: wallet.createdAt,
-        },
+        addresses: addresses.map(addr => ({
+          tokenSymbol: addr.tokenSymbol,
+          address: addr.address,
+        })),
         requiresEmailConfirmation,
         message: requiresEmailConfirmation 
           ? 'User registered successfully. Please check your email to confirm your account.'

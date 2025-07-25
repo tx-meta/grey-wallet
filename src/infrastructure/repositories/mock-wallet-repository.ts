@@ -8,6 +8,7 @@ import { WalletRepository } from '../../domain/repositories/wallet-repository';
 
 export class MockWalletRepository implements WalletRepository {
   private wallets: Map<string, Wallet> = new Map();
+  private addressCounters: Map<string, number> = new Map();
 
   async save(wallet: Wallet): Promise<Wallet> {
     this.wallets.set(wallet.walletId, wallet);
@@ -18,9 +19,9 @@ export class MockWalletRepository implements WalletRepository {
     return this.wallets.get(walletId) || null;
   }
 
-  async findByUserId(userId: string): Promise<Wallet | null> {
+  async findByTokenSymbol(tokenSymbol: string): Promise<Wallet | null> {
     for (const wallet of this.wallets.values()) {
-      if (wallet.userId === userId) {
+      if (wallet.tokenSymbol === tokenSymbol) {
         return wallet;
       }
     }
@@ -38,5 +39,28 @@ export class MockWalletRepository implements WalletRepository {
 
   async findActiveWallets(): Promise<Wallet[]> {
     return Array.from(this.wallets.values());
+  }
+
+  async getAndIncrementAddressIndex(walletId: string): Promise<number> {
+    const currentIndex = this.addressCounters.get(walletId) || 0;
+    this.addressCounters.set(walletId, currentIndex + 1);
+    return currentIndex;
+  }
+
+  async addUserAddress(userId: string, walletId: string, address: string): Promise<void> {
+    const wallet = this.wallets.get(walletId);
+    if (!wallet) {
+      throw new Error('Wallet not found');
+    }
+
+    // In a real implementation, this would save the user address to the database
+    // For mock purposes, we just log the address
+    console.log(`Adding user address: userId=${userId}, walletId=${walletId}, address=${address}`);
+  }
+
+  async findUserAddresses(_userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string }[]> {
+    // In a real implementation, this would query the database
+    // For mock purposes, return empty array
+    return [];
   }
 } 

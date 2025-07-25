@@ -16,6 +16,16 @@ export interface VaultService {
   updateWalletKeys(walletId: string, tokenSymbol: string, keys: WalletKeys[]): Promise<void>;
   deleteWalletKeys(walletId: string, tokenSymbol: string): Promise<void>;
 
+  // Wallet mnemonic management
+  storeWalletMnemonic(tokenSymbol: string, encryptedMnemonic: string): Promise<void>;
+  getWalletMnemonic(tokenSymbol: string): Promise<string | null>;
+  deleteWalletMnemonic(tokenSymbol: string): Promise<void>;
+
+  // User mnemonic management (for backward compatibility)
+  storeMnemonic(path: string, encryptedMnemonic: string): Promise<void>;
+  getMnemonic(path: string): Promise<string | null>;
+  deleteMnemonic(path: string): Promise<void>;
+
   // Verification token management
   storeVerificationToken(userId: string, type: 'email' | 'sms', token: string): Promise<void>;
   getVerificationToken(userId: string, type: 'email' | 'sms'): Promise<string | null>;

@@ -10,6 +10,8 @@ export class MockVaultService implements VaultService {
   private walletKeys: Map<string, WalletKeys[]> = new Map();
   private verificationTokens: Map<string, string> = new Map();
   private masterKeys: Map<string, string> = new Map();
+  private mnemonics: Map<string, string> = new Map();
+  private walletMnemonics: Map<string, string> = new Map();
 
   async storeWalletKeys(walletId: string, tokenSymbol: string, keys: WalletKeys[]): Promise<void> {
     const key = `${walletId}_${tokenSymbol}`;
@@ -63,6 +65,34 @@ export class MockVaultService implements VaultService {
   async rotateMasterWalletKey(tokenSymbol: string): Promise<void> {
     // In a real implementation, this would generate a new key and update it
     logger.info('Mock vault: rotated master wallet key', { tokenSymbol });
+  }
+
+  async storeMnemonic(path: string, encryptedMnemonic: string): Promise<void> {
+    this.mnemonics.set(path, encryptedMnemonic);
+    logger.info('Mock vault: stored mnemonic', { path });
+  }
+
+  async getMnemonic(path: string): Promise<string | null> {
+    return this.mnemonics.get(path) || null;
+  }
+
+  async deleteMnemonic(path: string): Promise<void> {
+    this.mnemonics.delete(path);
+    logger.info('Mock vault: deleted mnemonic', { path });
+  }
+
+  async storeWalletMnemonic(tokenSymbol: string, encryptedMnemonic: string): Promise<void> {
+    this.walletMnemonics.set(tokenSymbol, encryptedMnemonic);
+    logger.info('Mock vault: stored wallet mnemonic', { tokenSymbol });
+  }
+
+  async getWalletMnemonic(tokenSymbol: string): Promise<string | null> {
+    return this.walletMnemonics.get(tokenSymbol) || null;
+  }
+
+  async deleteWalletMnemonic(tokenSymbol: string): Promise<void> {
+    this.walletMnemonics.delete(tokenSymbol);
+    logger.info('Mock vault: deleted wallet mnemonic', { tokenSymbol });
   }
 
   async isHealthy(): Promise<boolean> {

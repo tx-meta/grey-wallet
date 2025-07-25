@@ -106,9 +106,21 @@ class App {
   }
 }
 
+// Import database seeder
+import { seedDatabase } from './infrastructure/database/seed';
+
 // Start the application
 const app = new App();
-app.listen();
+
+// Seed database on startup
+seedDatabase()
+  .then(() => {
+    app.listen();
+  })
+  .catch((error) => {
+    logger.error('Failed to seed database', { error: error instanceof Error ? error.message : 'Unknown error' });
+    process.exit(1);
+  });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

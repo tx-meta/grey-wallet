@@ -10,32 +10,31 @@ import { VaultService } from '../../application/interfaces/vault-service';
 import { NotificationService } from '../../application/interfaces/notification-service';
 import { CryptoService } from '../../application/interfaces/crypto-service';
 
+// Import Prisma implementations
+import { PrismaUserRepository } from '../repositories/prisma-user-repository';
+import { PrismaWalletRepository } from '../repositories/prisma-wallet-repository';
+import { PrismaTokenRepository } from '../repositories/prisma-token-repository';
+
 export class ServiceFactory {
   /**
    * Creates a real UserRepository implementation
-   * TODO: Implement when Prisma repository is ready
    */
   static createUserRepository(): UserRepository {
-    // TODO: Return new PrismaUserRepository() when implemented
-    throw new Error('Real UserRepository implementation not yet available');
+    return new PrismaUserRepository();
   }
 
   /**
    * Creates a real WalletRepository implementation
-   * TODO: Implement when Prisma repository is ready
    */
   static createWalletRepository(): WalletRepository {
-    // TODO: Return new PrismaWalletRepository() when implemented
-    throw new Error('Real WalletRepository implementation not yet available');
+    return new PrismaWalletRepository();
   }
 
   /**
    * Creates a real TokenRepository implementation
-   * TODO: Implement when Prisma repository is ready
    */
   static createTokenRepository(): TokenRepository {
-    // TODO: Return new PrismaTokenRepository() when implemented
-    throw new Error('Real TokenRepository implementation not yet available');
+    return new PrismaTokenRepository();
   }
 
   /**

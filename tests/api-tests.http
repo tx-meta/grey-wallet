@@ -48,11 +48,11 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "mike.wilson@example.com",
+  "email": "kmuhindi@txmeta.io",
   "phone": "+254700123456",
   "password": "KenyaPass789!",
-  "firstName": "Mike",
-  "lastName": "Wilson",
+  "firstName": "James",
+  "lastName": "Peach",
   "country": "Kenya",
   "currency": "KES"
 }

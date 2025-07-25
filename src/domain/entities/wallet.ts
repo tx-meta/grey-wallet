@@ -5,8 +5,7 @@
 
 export interface WalletProps {
   walletId: string;
-  userId: string;
-  addressListId: string;
+  tokenSymbol: string;
   walletBalance: number;
   createdAt: Date;
   updatedAt: Date;
@@ -25,12 +24,8 @@ export class Wallet {
     return this.props.walletId;
   }
 
-  get userId(): string {
-    return this.props.userId;
-  }
-
-  get addressListId(): string {
-    return this.props.addressListId;
+  get tokenSymbol(): string {
+    return this.props.tokenSymbol;
   }
 
   get walletBalance(): number {
@@ -78,11 +73,8 @@ export class Wallet {
     if (!props.walletId || props.walletId.trim().length === 0) {
       throw new Error('Wallet ID is required');
     }
-    if (!props.userId || props.userId.trim().length === 0) {
-      throw new Error('User ID is required');
-    }
-    if (!props.addressListId || props.addressListId.trim().length === 0) {
-      throw new Error('Address list ID is required');
+    if (!props.tokenSymbol || props.tokenSymbol.trim().length === 0) {
+      throw new Error('Token symbol is required');
     }
     if (props.walletBalance < 0) {
       throw new Error('Wallet balance cannot be negative');
@@ -90,12 +82,11 @@ export class Wallet {
   }
 
   // Factory method for creating new wallets
-  static create(userId: string, addressListId: string): Wallet {
+  static create(tokenSymbol: string): Wallet {
     const now = new Date();
     return new Wallet({
       walletId: crypto.randomUUID(),
-      userId,
-      addressListId,
+      tokenSymbol,
       walletBalance: 0,
       createdAt: now,
       updatedAt: now,
