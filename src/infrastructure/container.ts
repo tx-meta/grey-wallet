@@ -23,11 +23,9 @@ import { ServiceFactory } from './factories/service-factory';
 
 // Import use cases
 import { SignUpUseCase } from '../domain/use_cases/sign-up';
-import { SupabaseSignUpUseCase } from '../domain/use_cases/sign-up-supabase';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
-import { SupabaseAuthController } from '../presentation/controllers/auth-controller-supabase';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -68,21 +66,6 @@ export class Container {
     this.services.set('VaultService', new MockVaultService());
     this.services.set('NotificationService', new MockNotificationService());
     this.services.set('CryptoService', new MockCryptoService());
-
-    // Initialize use cases
-    this.services.set('SignUpUseCase', new SignUpUseCase(
-      this.services.get('UserRepository'),
-      this.services.get('WalletRepository'),
-      this.services.get('TokenRepository'),
-      this.services.get('VaultService'),
-      this.services.get('NotificationService'),
-      this.services.get('CryptoService')
-    ));
-
-    // Initialize controllers
-    this.services.set('AuthController', new AuthController(
-      this.services.get('SignUpUseCase')
-    ));
   }
 
   private initializeRealServices(): void {
@@ -96,21 +79,6 @@ export class Container {
       this.services.set('VaultService', ServiceFactory.createVaultService());
       this.services.set('NotificationService', ServiceFactory.createNotificationService());
       this.services.set('CryptoService', ServiceFactory.createCryptoService());
-
-      // Initialize use cases
-      this.services.set('SignUpUseCase', new SignUpUseCase(
-        this.services.get('UserRepository'),
-        this.services.get('WalletRepository'),
-        this.services.get('TokenRepository'),
-        this.services.get('VaultService'),
-        this.services.get('NotificationService'),
-        this.services.get('CryptoService')
-      ));
-
-      // Initialize controllers
-      this.services.set('AuthController', new AuthController(
-        this.services.get('SignUpUseCase')
-      ));
 
     } catch (error) {
       console.warn('⚠️  Real service implementations not yet available. Falling back to mocks.');
@@ -127,18 +95,16 @@ export class Container {
     return service as T;
   }
 
-  public getAuthController(): AuthController {
-    return this.get<AuthController>('AuthController');
-  }
 
-  public getSupabaseAuthController(): SupabaseAuthController {
+
+  public getAuthController(): AuthController {
     // Initialize Supabase services if not already done
     if (!this.services.has('SupabaseAuthService')) {
       this.services.set('SupabaseAuthService', new SupabaseAuthService());
     }
 
-    if (!this.services.has('SupabaseSignUpUseCase')) {
-      this.services.set('SupabaseSignUpUseCase', new SupabaseSignUpUseCase(
+    if (!this.services.has('SignUpUseCase')) {
+      this.services.set('SignUpUseCase', new SignUpUseCase(
         this.services.get('SupabaseAuthService'),
         this.services.get('WalletRepository'),
         this.services.get('TokenRepository'),
@@ -147,14 +113,14 @@ export class Container {
       ));
     }
 
-    if (!this.services.has('SupabaseAuthController')) {
-      this.services.set('SupabaseAuthController', new SupabaseAuthController(
-        this.services.get('SupabaseSignUpUseCase'),
+    if (!this.services.has('AuthController')) {
+      this.services.set('AuthController', new AuthController(
+        this.services.get('SignUpUseCase'),
         this.services.get('SupabaseAuthService')
       ));
     }
 
-    return this.get<SupabaseAuthController>('SupabaseAuthController');
+    return this.get<AuthController>('AuthController');
   }
 
   public getRepositories() {

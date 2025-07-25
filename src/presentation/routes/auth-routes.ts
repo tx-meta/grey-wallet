@@ -1,6 +1,6 @@
 /**
  * Authentication Routes
- * Defines authentication-related API endpoints
+ * Defines authentication-related API endpoints using Supabase Auth
  */
 
 import { Router } from 'express';
@@ -8,7 +8,7 @@ import { body } from 'express-validator';
 import { validateRequest } from '../middleware/validation';
 import { container } from '../../infrastructure/container';
 
-// Get controller from dependency injection container
+// Get auth controller from dependency injection container
 const authController = container.getAuthController();
 
 const router = Router();
@@ -44,15 +44,6 @@ const signUpValidation = [
     .withMessage('Please provide a valid currency code'),
 ];
 
-const verificationValidation = [
-  body('userId')
-    .isUUID()
-    .withMessage('Please provide a valid user ID'),
-  body('token')
-    .isLength({ min: 6 })
-    .withMessage('Token must be at least 6 characters long'),
-];
-
 const loginValidation = [
   body('email')
     .isEmail()
@@ -63,13 +54,22 @@ const loginValidation = [
     .withMessage('Password is required'),
 ];
 
+const resetPasswordValidation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+];
+
 // Routes
 router.post('/signup', signUpValidation, validateRequest, authController.signUp.bind(authController));
 
-router.post('/verify-email', verificationValidation, validateRequest, authController.verifyEmail.bind(authController));
-
-router.post('/verify-sms', verificationValidation, validateRequest, authController.verifySMS.bind(authController));
-
 router.post('/login', loginValidation, validateRequest, authController.login.bind(authController));
+
+router.post('/logout', authController.logout.bind(authController));
+
+router.post('/reset-password', resetPasswordValidation, validateRequest, authController.resetPassword.bind(authController));
+
+router.get('/me', authController.getCurrentUser.bind(authController));
 
 export default router; 

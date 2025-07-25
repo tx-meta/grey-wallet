@@ -207,8 +207,8 @@ POST {{baseUrl}}/api/auth/verify-sms
 Content-Type: {{contentType}}
 
 {
-  "userId": "d4550b67-5bcf-4c1d-971d-ecd6e7c22b49",
-  "token": "058023"
+  "userId": "cbf52599-c2f7-4e0b-ad06-395a803c37b3",
+  "token": "330093"
 }
 
 ### ========================================

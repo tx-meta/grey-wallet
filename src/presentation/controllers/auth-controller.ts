@@ -1,18 +1,22 @@
 /**
  * Authentication Controller
- * Handles authentication-related HTTP requests
+ * Handles authentication-related HTTP requests using Supabase Auth
  */
 
 import { Request, Response } from 'express';
 import { SignUpUseCase, SignUpRequest } from '../../domain/use_cases/sign-up';
+import { SupabaseAuthService } from '../../infrastructure/external_apis/supabase-auth';
 import logger from '../../shared/logging';
 
 export class AuthController {
-  constructor(private signUpUseCase: SignUpUseCase) {}
+  constructor(
+    private signUpUseCase: SignUpUseCase,
+    private supabaseAuthService: SupabaseAuthService
+  ) {}
 
   /**
    * POST /api/auth/signup
-   * User registration endpoint
+   * User registration endpoint using Supabase Auth
    */
   async signUp(req: Request, res: Response): Promise<void> {
     try {
@@ -26,7 +30,7 @@ export class AuthController {
         currency: req.body.currency,
       };
 
-      logger.info('Sign up request received', { email: signUpRequest.email });
+      logger.info('Supabase sign up request received', { email: signUpRequest.email });
 
       const result = await this.signUpUseCase.execute(signUpRequest);
 
@@ -38,8 +42,8 @@ export class AuthController {
         return;
       }
 
-      // Don't send sensitive data in response
-      const { user, wallet } = result.data!;
+      const { user, wallet, requiresEmailConfirmation } = result.data!;
+      
       const responseData = {
         user: {
           id: user.id,
@@ -48,8 +52,7 @@ export class AuthController {
           lastName: user.lastName,
           country: user.country,
           currency: user.currency,
-          isEmailVerified: user.isEmailVerified,
-          isPhoneVerified: user.isPhoneVerified,
+          phone: user.phone,
           createdAt: user.createdAt,
         },
         wallet: {
@@ -57,83 +60,20 @@ export class AuthController {
           walletBalance: wallet.walletBalance,
           createdAt: wallet.createdAt,
         },
-        message: 'User registered successfully. Please check your email and phone for verification.',
+        requiresEmailConfirmation,
+        message: requiresEmailConfirmation 
+          ? 'User registered successfully. Please check your email to confirm your account.'
+          : 'User registered successfully. Welcome to Grey Wallet!',
       };
 
-      logger.info('User registered successfully', { userId: user.id });
+      logger.info('User registered successfully with Supabase', { userId: user.id });
 
       res.status(201).json({
         success: true,
         data: responseData,
       });
     } catch (error) {
-      logger.error('Sign up error', { error: error instanceof Error ? error.message : 'Unknown error' });
-      
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
-    }
-  }
-
-  /**
-   * POST /api/auth/verify-email
-   * Email verification endpoint
-   */
-  async verifyEmail(req: Request, res: Response): Promise<void> {
-    try {
-      const { userId, token } = req.body;
-
-      if (!userId || !token) {
-        res.status(400).json({
-          success: false,
-          message: 'User ID and token are required',
-        });
-        return;
-      }
-
-      // TODO: Implement email verification use case
-      logger.info('Email verification request', { userId });
-
-      res.status(200).json({
-        success: true,
-        message: 'Email verified successfully',
-      });
-    } catch (error) {
-      logger.error('Email verification error', { error: error instanceof Error ? error.message : 'Unknown error' });
-      
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
-    }
-  }
-
-  /**
-   * POST /api/auth/verify-sms
-   * SMS verification endpoint
-   */
-  async verifySMS(req: Request, res: Response): Promise<void> {
-    try {
-      const { userId, token } = req.body;
-
-      if (!userId || !token) {
-        res.status(400).json({
-          success: false,
-          message: 'User ID and token are required',
-        });
-        return;
-      }
-
-      // TODO: Implement SMS verification use case
-      logger.info('SMS verification request', { userId });
-
-      res.status(200).json({
-        success: true,
-        message: 'Phone number verified successfully',
-      });
-    } catch (error) {
-      logger.error('SMS verification error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      logger.error('Supabase sign up error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
       res.status(500).json({
         success: false,
@@ -144,7 +84,7 @@ export class AuthController {
 
   /**
    * POST /api/auth/login
-   * User login endpoint
+   * User login endpoint using Supabase Auth
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
@@ -158,15 +98,172 @@ export class AuthController {
         return;
       }
 
-      // TODO: Implement login use case
-      logger.info('Login request', { email });
+      logger.info('Supabase login request', { email });
+
+      const { user, session, error } = await this.supabaseAuthService.signIn(email, password);
+
+      if (error) {
+        res.status(401).json({
+          success: false,
+          message: error,
+        });
+        return;
+      }
+
+      if (!user || !session) {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+        return;
+      }
+
+      logger.info('User logged in successfully', { userId: user.id });
 
       res.status(200).json({
         success: true,
-        message: 'Login endpoint - implementation pending',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.user_metadata?.firstName,
+            lastName: user.user_metadata?.lastName,
+            country: user.user_metadata?.country,
+            currency: user.user_metadata?.currency,
+            phone: user.user_metadata?.phone,
+          },
+          session: {
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token,
+            expiresAt: session.expires_at,
+          },
+        },
       });
     } catch (error) {
-      logger.error('Login error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      logger.error('Supabase login error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/logout
+   * User logout endpoint using Supabase Auth
+   */
+  async logout(_req: Request, res: Response): Promise<void> {
+    try {
+      const { error } = await this.supabaseAuthService.signOut();
+
+      if (error) {
+        res.status(400).json({
+          success: false,
+          message: error,
+        });
+        return;
+      }
+
+      logger.info('User logged out successfully');
+
+      res.status(200).json({
+        success: true,
+        message: 'Logged out successfully',
+      });
+    } catch (error) {
+      logger.error('Supabase logout error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/reset-password
+   * Password reset endpoint using Supabase Auth
+   */
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        res.status(400).json({
+          success: false,
+          message: 'Email is required',
+        });
+        return;
+      }
+
+      logger.info('Password reset request', { email });
+
+      const { error } = await this.supabaseAuthService.resetPassword(email);
+
+      if (error) {
+        res.status(400).json({
+          success: false,
+          message: error,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset email sent successfully',
+      });
+    } catch (error) {
+      logger.error('Password reset error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/auth/me
+   * Get current user profile using Supabase Auth
+   */
+  async getCurrentUser(_req: Request, res: Response): Promise<void> {
+    try {
+      const { user, error } = await this.supabaseAuthService.getCurrentUser();
+
+      if (error) {
+        res.status(401).json({
+          success: false,
+          message: error,
+        });
+        return;
+      }
+
+      if (!user) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.user_metadata?.firstName,
+            lastName: user.user_metadata?.lastName,
+            country: user.user_metadata?.country,
+            currency: user.user_metadata?.currency,
+            phone: user.user_metadata?.phone,
+            createdAt: user.created_at,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error('Get current user error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
       res.status(500).json({
         success: false,

@@ -15,13 +15,12 @@ import logger, { stream } from '../shared/logging';
 
 // Import routes
 import authRoutes from './presentation/routes/auth-routes';
-import authRoutesSupabase from './presentation/routes/auth-routes-supabase';
 import walletRoutes from './presentation/routes/wallet-routes';
 import userRoutes from './presentation/routes/user-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
-import { requestLogger } from './presentation/middleware/request-logger';
+// import { requestLogger } from './presentation/middleware/request-logger';
 
 class App {
   public app: express.Application;
@@ -60,7 +59,7 @@ class App {
 
     // Logging middleware
     this.app.use(morgan('combined', { stream }));
-    this.app.use(requestLogger);
+    // this.app.use(requestLogger);
 
     // Health check endpoint
     this.app.get('/health', (_req, res) => {
@@ -74,16 +73,9 @@ class App {
   }
 
   private initializeRoutes(): void {
-    // API routes - Choose between custom auth or Supabase auth
-    const useSupabaseAuth = process.env['USE_SUPABASE_AUTH'] === 'true';
-    
-    if (useSupabaseAuth) {
-      this.app.use('/api/auth', authRoutesSupabase);
-      logger.info('🔐 Using Supabase authentication');
-    } else {
-      this.app.use('/api/auth', authRoutes);
-      logger.info('🔐 Using custom authentication');
-    }
+    // API routes - Using Supabase authentication
+    this.app.use('/api/auth', authRoutes);
+    logger.info('Using Supabase authentication');
     
     this.app.use('/api/wallet', walletRoutes);
     this.app.use('/api/user', userRoutes);
@@ -107,9 +99,9 @@ class App {
     const host = config.server.host;
 
     this.app.listen(port, host, () => {
-      logger.info(`🚀 Server running on http://${host}:${port}`);
-      logger.info(`📊 Environment: ${config.server.nodeEnv}`);
-      logger.info(`🔗 CORS Origin: ${config.server.corsOrigin}`);
+      logger.info(`Server running on http://${host}:${port}`);
+      logger.info(`Environment: ${config.server.nodeEnv}`);
+      logger.info(`CORS Origin: ${config.server.corsOrigin}`);
     });
   }
 }

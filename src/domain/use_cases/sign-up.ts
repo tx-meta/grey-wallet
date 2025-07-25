@@ -1,17 +1,15 @@
 /**
  * Sign Up Use Case
- * Orchestrates the user registration process including wallet creation
+ * Orchestrates user registration using Supabase Auth
  */
 
-import { User } from '../entities/user';
 import { Wallet } from '../entities/wallet';
 import { SupportedToken } from '../entities/supported-token';
-import { UserRepository } from '../repositories/user-repository';
 import { WalletRepository } from '../repositories/wallet-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { VaultService } from '../../application/interfaces/vault-service';
 import { NotificationService } from '../../application/interfaces/notification-service';
-import { CryptoService } from '../../application/interfaces/crypto-service';
+import { SupabaseAuthService, SignUpData } from '../../infrastructure/external_apis/supabase-auth';
 
 export interface SignUpRequest {
   email: string;
@@ -24,12 +22,18 @@ export interface SignUpRequest {
 }
 
 export interface SignUpResponse {
-  user: User;
-  wallet: Wallet;
-  verificationTokens: {
-    emailToken: string;
-    smsToken: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    country: string;
+    currency: string;
+    phone: string;
+    createdAt: string;
   };
+  wallet: Wallet;
+  requiresEmailConfirmation: boolean;
 }
 
 export interface SignUpResult {
@@ -40,12 +44,11 @@ export interface SignUpResult {
 
 export class SignUpUseCase {
   constructor(
-    private userRepository: UserRepository,
+    private supabaseAuthService: SupabaseAuthService,
     private walletRepository: WalletRepository,
     private tokenRepository: TokenRepository,
     private vaultService: VaultService,
-    private notificationService: NotificationService,
-    private cryptoService: CryptoService
+    private notificationService: NotificationService
   ) {}
 
   async execute(request: SignUpRequest): Promise<SignUpResult> {
@@ -53,59 +56,69 @@ export class SignUpUseCase {
       // 1. Validate input
       this.validateSignUpRequest(request);
 
-      // 2. Check if user already exists
-      const existingUser = await this.userRepository.findByEmail(request.email);
-      if (existingUser) {
+      // 2. Sign up user with Supabase Auth
+      const signUpData: SignUpData = {
+        email: request.email.toLowerCase().trim(),
+        phone: request.phone.trim(),
+        password: request.password,
+        firstName: request.firstName.trim(),
+        lastName: request.lastName.trim(),
+        country: request.country.trim(),
+        currency: request.currency.toUpperCase().trim(),
+      };
+
+      const { user: supabaseUser, error: authError, isNewUser } = await this.supabaseAuthService.signUp(signUpData);
+
+      if (authError) {
+        return {
+          success: false,
+          error: authError,
+        };
+      }
+
+      // Check if this is an existing user
+      if (!isNewUser) {
         return {
           success: false,
           error: 'User with this email already exists',
         };
       }
 
-      const existingPhone = await this.userRepository.findByPhone(request.phone);
-      if (existingPhone) {
+      if (!supabaseUser) {
         return {
           success: false,
-          error: 'User with this phone number already exists',
+          error: 'Failed to create user account',
         };
       }
 
-      // 3. Hash password
-      const passwordHash = await this.cryptoService.hashPassword(request.password);
-
-      // 4. Create user
-      const user = User.create({
-        email: request.email.toLowerCase().trim(),
-        phone: request.phone.trim(),
-        passwordHash,
-        firstName: request.firstName.trim(),
-        lastName: request.lastName.trim(),
-        country: request.country.trim(),
-        currency: request.currency.toUpperCase().trim(),
-      });
-
-      // 5. Save user to database
-      const savedUser = await this.userRepository.save(user);
-
-      // 6. Get supported tokens
+      // 3. Get supported tokens
       const supportedTokens = await this.tokenRepository.findActiveTokens();
 
-      // 7. Create wallet and addresses for each token
-      const wallet = await this.createWalletWithAddresses(savedUser, supportedTokens);
+      // 4. Create wallet and addresses for each token
+      const wallet = await this.createWalletWithAddresses(supabaseUser.id, supportedTokens);
 
-      // 8. Generate verification tokens
-      const verificationTokens = await this.generateVerificationTokens(savedUser);
+      // 5. Send welcome notifications
+      await this.sendWelcomeNotifications(supabaseUser, signUpData);
 
-      // 9. Send verification notifications
-      await this.sendVerificationNotifications(savedUser, verificationTokens);
+      // 6. Prepare response
+      const responseData: SignUpResponse = {
+        user: {
+          id: supabaseUser.id,
+          email: supabaseUser.email,
+          firstName: signUpData.firstName,
+          lastName: signUpData.lastName,
+          country: signUpData.country,
+          currency: signUpData.currency,
+          phone: signUpData.phone,
+          createdAt: supabaseUser.created_at,
+        },
+        wallet,
+        requiresEmailConfirmation: !supabaseUser.email_confirmed_at || false,
+      };
 
       return {
         success: true,
-        data: {
-          user: savedUser,
-          wallet,
-          verificationTokens,
-        },
+        data: responseData,
       };
     } catch (error) {
       return {
@@ -131,11 +144,23 @@ export class SignUpUseCase {
     if (request.password.length < 8) {
       throw new Error('Password must be at least 8 characters long');
     }
+
+    // Email validation temporarily deactivated - using express-validator isEmail() instead
+    // const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    // if (!emailRegex.test(request.email)) {
+    //   throw new Error('Invalid email address');
+    // }
+
+    // Phone validation
+    const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+    if (!phoneRegex.test(request.phone) || request.phone.length < 10) {
+      throw new Error('Invalid phone number');
+    }
   }
 
-  private async createWalletWithAddresses(user: User, tokens: SupportedToken[]): Promise<Wallet> {
+  private async createWalletWithAddresses(userId: string, tokens: SupportedToken[]): Promise<Wallet> {
     // Create wallet
-    const wallet = Wallet.create(user.id, crypto.randomUUID());
+    const wallet = Wallet.create(userId, crypto.randomUUID());
 
     // For each supported token, create addresses and store in vault
     for (const token of tokens) {
@@ -166,22 +191,13 @@ export class SignUpUseCase {
     ];
   }
 
-  private async generateVerificationTokens(user: User): Promise<{ emailToken: string; smsToken: string }> {
-    const emailToken = await this.cryptoService.generateToken();
-    const smsToken = await this.cryptoService.generateNumericToken(6);
+  private async sendWelcomeNotifications(supabaseUser: any, userData: SignUpData): Promise<void> {
+    const fullName = `${userData.firstName} ${userData.lastName}`;
 
-    // Store tokens temporarily (could use Redis or database)
-    await this.vaultService.storeVerificationToken(user.id, 'email', emailToken);
-    await this.vaultService.storeVerificationToken(user.id, 'sms', smsToken);
+    // Send welcome email
+    await this.notificationService.sendEmailWelcome(supabaseUser.email, fullName);
 
-    return { emailToken, smsToken };
-  }
-
-  private async sendVerificationNotifications(user: User, tokens: { emailToken: string; smsToken: string }): Promise<void> {
-    // Send email verification
-    await this.notificationService.sendEmailVerification(user.email, tokens.emailToken, user.fullName);
-
-    // Send SMS verification
-    await this.notificationService.sendSMSVerification(user.phone, tokens.smsToken);
+    // Send welcome SMS
+    await this.notificationService.sendSMSWelcome(userData.phone, fullName);
   }
 } 

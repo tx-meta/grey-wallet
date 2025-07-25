@@ -1,6 +1,6 @@
 /**
- * Supabase Authentication Routes
- * Defines authentication-related API endpoints using Supabase
+ * Authentication Routes
+ * Defines authentication-related API endpoints using Supabase Auth
  */
 
 import { Router } from 'express';
@@ -8,8 +8,8 @@ import { body } from 'express-validator';
 import { validateRequest } from '../middleware/validation';
 import { container } from '../../infrastructure/container';
 
-// Get Supabase controller from dependency injection container
-const authController = container.getSupabaseAuthController();
+// Get auth controller from dependency injection container
+const authController = container.getAuthController();
 
 const router = Router();
 

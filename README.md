@@ -53,7 +53,7 @@ tests/                # Test files
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: Supabase Auth
+- **Authentication**: Supabase Auth (exclusively)
 - **Key Management**: HashiCorp Vault
 - **Logging**: Winston
 - **Validation**: Express Validator
@@ -129,9 +129,7 @@ VAULT_ENDPOINT=http://localhost:8200
 VAULT_TOKEN=your_vault_token
 VAULT_MOUNT_PATH=secret
 
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key_here_make_it_long_and_secure
-JWT_EXPIRES_IN=24h
+
 
 # SMS Configuration (Twilio)
 SMS_PROVIDER=twilio
@@ -146,11 +144,12 @@ FROM_EMAIL=noreply@greywallet.com
 
 ## API Endpoints
 
-### Authentication
+### Authentication (Supabase Auth)
 - `POST /api/auth/signup` - User registration
-- `POST /api/auth/verify-email` - Email verification
-- `POST /api/auth/verify-sms` - SMS verification
 - `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/reset-password` - Password reset
+- `GET /api/auth/me` - Get current user profile
 
 ### Users
 - `GET /api/user` - Get user profile
@@ -233,8 +232,7 @@ grey-wallet/
 
 ## Security Features
 
-- **Password Hashing**: bcrypt for secure password storage
-- **JWT Authentication**: Secure token-based authentication
+- **Supabase Auth**: Secure authentication and session management
 - **Rate Limiting**: Protection against brute force attacks
 - **Input Validation**: Comprehensive request validation
 - **CORS Protection**: Cross-origin resource sharing control
