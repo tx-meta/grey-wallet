@@ -14,7 +14,6 @@ import { CryptoService } from '../application/interfaces/crypto-service';
 import { MockUserRepository } from './repositories/mock-user-repository';
 import { MockWalletRepository } from './repositories/mock-wallet-repository';
 import { MockTokenRepository } from './repositories/mock-token-repository';
-import { MockVaultService } from './services/mock-vault-service';
 
 import { MockNotificationService } from './services/mock-notification-service';
 import { MockCryptoService } from './services/mock-crypto-service';
@@ -71,10 +70,18 @@ export class Container {
     this.services.set('WalletRepository', new MockWalletRepository());
     this.services.set('TokenRepository', new MockTokenRepository());
 
-    // Initialize mock services
-    this.services.set('VaultService', new MockVaultService());
+    // Initialize mock services (except VaultService - always use real HashiCorp Vault)
     this.services.set('NotificationService', new MockNotificationService());
     this.services.set('CryptoService', new MockCryptoService());
+    
+    // Always use real HashiCorp Vault service
+    try {
+      this.services.set('VaultService', ServiceFactory.createVaultService());
+      console.log('✅ VaultService initialized with HashiCorp Vault');
+    } catch (error) {
+      console.error('❌ Failed to initialize HashiCorp Vault service:', error instanceof Error ? error.message : 'Unknown error');
+      throw new Error('HashiCorp Vault service is required. Please ensure VAULT_URL and VAULT_TOKEN are set.');
+    }
   }
 
   private initializeRealServices(): void {
@@ -106,10 +113,10 @@ export class Container {
     // Initialize real services (these are not available yet)
     try {
       this.services.set('VaultService', ServiceFactory.createVaultService());
-      console.log('✅ VaultService initialized with real implementation');
+      console.log('✅ VaultService initialized with HashiCorp Vault');
     } catch (error) {
-      console.warn('⚠️  Real VaultService not available, using mock');
-      this.services.set('VaultService', new MockVaultService());
+      console.error('❌ Failed to initialize HashiCorp Vault service:', error instanceof Error ? error.message : 'Unknown error');
+      throw new Error('HashiCorp Vault service is required. Please ensure VAULT_URL and VAULT_TOKEN are set.');
     }
 
     try {

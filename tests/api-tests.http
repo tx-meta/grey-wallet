@@ -29,7 +29,7 @@ Content-Type: {{contentType}}
   "phone": "+254700123456",
   "password": "TestPassword123!",
   "firstName": "Muhindi",
-  "lastName": "Briggs",
+  "lastName": "Briggas",
   "country": "Kenya",
   "currency": "KES"
 }

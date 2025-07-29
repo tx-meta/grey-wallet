@@ -65,7 +65,11 @@ export class GetWalletInfoUseCase {
       const activeTokens = await this.tokenRepository.findActiveTokens();
       const tokenMap = new Map(activeTokens.map(token => [token.symbol, token]));
 
-      // 5. Build address information
+      // 5. Get all wallets at once to avoid N+1 query problem
+      const allWallets = await this.walletRepository.findActiveWallets();
+      const walletMap = new Map(allWallets.map(wallet => [wallet.tokenSymbol, wallet]));
+
+      // 6. Build address information
       const addresses: WalletAddressInfo[] = [];
       let totalBalance = 0;
 
@@ -79,8 +83,8 @@ export class GetWalletInfoUseCase {
           continue;
         }
 
-        // Get wallet balance for this token
-        const wallet = await this.walletRepository.findByTokenSymbol(userAddress.tokenSymbol);
+        // Get wallet balance from the pre-fetched map
+        const wallet = walletMap.get(userAddress.tokenSymbol);
         const walletBalance = wallet ? wallet.walletBalance : 0;
 
         addresses.push({
@@ -90,13 +94,13 @@ export class GetWalletInfoUseCase {
           address: userAddress.address,
           tokenBalance: userAddress.tokenBalance || 0,
           walletBalance,
-          createdAt: new Date().toISOString(), // This should come from userAddress.createdAt
+          createdAt: new Date().toISOString(), // userAddress doesn't have createdAt in current interface
         });
 
         totalBalance += userAddress.tokenBalance || 0;
       }
 
-      // 6. Prepare response
+      // 7. Prepare response
       const response: WalletInfoResponse = {
         userId: request.userId,
         userEmail: user.email,
