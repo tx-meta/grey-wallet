@@ -1,0 +1,436 @@
+### ========================================
+### WALLET API TESTS
+### ========================================
+### This file contains comprehensive tests for the Wallet API endpoints
+### Make sure to set up your environment variables and authentication tokens
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+@authToken = eyJhbGciOiJIUzI1NiIsImtpZCI6ImxUZllXOHM2K1I5b05EWDAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2hrYWxjdGZnZ3ViYXBxb3RjZWFoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmMzU4MTEwMS1mMjkxLTRmNmEtOTk2Ni02OWJjZGIxYzhkNjgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzNzk3ODA0LCJpYXQiOjE3NTM3OTQyMDQsImVtYWlsIjoia211aGluZGlAcHJvdG9uLm1lIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJjb3VudHJ5IjoiS2VueWEiLCJjdXJyZW5jeSI6IktFUyIsImVtYWlsIjoia211aGluZGlAcHJvdG9uLm1lIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcnN0TmFtZSI6Ik11aGluZGkiLCJsYXN0TmFtZSI6IktpcG5nZXRpY2giLCJwaG9uZSI6IisyNTQ3MDAxMjM0NTYiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6ImYzNTgxMTAxLWYyOTEtNGY2YS05OTY2LTY5YmNkYjFjOGQ2OCJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzNzk0MjA0fV0sInNlc3Npb25faWQiOiJjNTkwYjBlMC1lYTY1LTQ2YWQtYTNkMC03ZDIyOTdlMTMxOTIiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.sg5rxa8WU9JMwTu4M1JxZw4Pxh2sN7AFwIQXRuC-0PY
+
+@refreshToken = nsprkwpbhslm
+@currentUserId = 775b4b27-a2d6-4e4f-8d86-96a9f36de28c 
+
+### ========================================
+### AUTHENTICATION SETUP
+### ========================================
+
+### 1. Sign In to get auth token
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "kmuhindi@proton.me",
+  "password": "TestPassword123!"
+}
+
+### Copy the accessToken from the response and set it as @authToken above
+
+### ========================================
+### SUPPORTED TOKENS TESTS (Public)
+### ========================================
+
+### 2. Get All Supported Tokens (Public)
+GET {{baseUrl}}/api/wallet/tokens
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "tokens": [
+###       {
+###         "tokenId": "uuid",
+###         "name": "Bitcoin",
+###         "symbol": "BTC",
+###         "icon": "/icons/bitcoin.svg",
+###         "isActive": true,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       }
+###     ],
+###     "totalTokens": 4,
+###     "activeTokens": 4,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### ========================================
+### WALLET OVERVIEW TESTS (Authenticated)
+### ========================================
+
+### 3. Get Wallet Overview
+GET {{baseUrl}}/api/wallet/overview
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "user-uuid",
+###     "userEmail": "test@example.com",
+###     "totalBalance": 0,
+###     "totalTokens": 4,
+###     "supportedTokens": 4,
+###     "activeTokens": 4,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 4. Get Wallet Overview (Unauthenticated)
+GET {{baseUrl}}/api/wallet/overview
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### WALLET INFORMATION TESTS (Authenticated)
+### ========================================
+
+### 5. Get Complete Wallet Information
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer 
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "user-uuid",
+###     "userEmail": "test@example.com",
+###     "totalBalance": 0,
+###     "totalTokens": 4,
+###     "addresses": [
+###       {
+###         "tokenSymbol": "BTC",
+###         "tokenName": "Bitcoin",
+###         "tokenIcon": "/icons/bitcoin.svg",
+###         "address": "bc1q...",
+###         "tokenBalance": 0,
+###         "walletBalance": 0,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       }
+###     ],
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 6. Get Wallet Information (Unauthenticated)
+GET {{baseUrl}}/api/wallet
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### WALLET ADDRESSES TESTS (Authenticated)
+### ========================================
+
+### 7. Get All Wallet Addresses
+GET {{baseUrl}}/api/wallet/addresses
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "user-uuid",
+###     "addresses": [
+###       {
+###         "tokenSymbol": "BTC",
+###         "tokenName": "Bitcoin",
+###         "tokenIcon": "/icons/bitcoin.svg",
+###         "address": "bc1q...",
+###         "tokenBalance": 0,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       }
+###     ],
+###     "totalAddresses": 4
+###   }
+### }
+
+### 8. Get Wallet Addresses (Unauthenticated)
+GET {{baseUrl}}/api/wallet/addresses
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### TOKEN BALANCE TESTS (Authenticated)
+### ========================================
+
+### 9. Get Bitcoin Balance
+GET {{baseUrl}}/api/wallet/balance/BTC
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "tokenSymbol": "BTC",
+###     "tokenName": "Bitcoin",
+###     "tokenIcon": "/icons/bitcoin.svg",
+###     "address": "bc1q...",
+###     "userBalance": 0,
+###     "walletBalance": 0,
+###     "isActive": true,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 10. Get Ethereum Balance
+GET {{baseUrl}}/api/wallet/balance/ETH
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "tokenSymbol": "ETH",
+###     "tokenName": "Ethereum",
+###     "tokenIcon": "/icons/ethereum.svg",
+###     "address": "0x...",
+###     "userBalance": 0,
+###     "walletBalance": 0,
+###     "isActive": true,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 11. Get Cardano Balance
+GET {{baseUrl}}/api/wallet/balance/ADA
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "tokenSymbol": "ADA",
+###     "tokenName": "Cardano",
+###     "tokenIcon": "/icons/cardano.svg",
+###     "address": "addr1...",
+###     "userBalance": 0,
+###     "walletBalance": 0,
+###     "isActive": true,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 12. Get Solana Balance
+GET {{baseUrl}}/api/wallet/balance/SOL
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "tokenSymbol": "SOL",
+###     "tokenName": "Solana",
+###     "tokenIcon": "/icons/solana.svg",
+###     "address": "...",
+###     "userBalance": 0,
+###     "walletBalance": 0,
+###     "isActive": true,
+###     "lastUpdated": "2024-01-01T00:00:00.000Z"
+###   }
+### }
+
+### 13. Get Token Balance (Unauthenticated)
+GET {{baseUrl}}/api/wallet/balance/BTC
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 14. Get Non-existent Token Balance
+GET {{baseUrl}}/api/wallet/balance/XYZ
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Token not supported"
+### }
+
+### 15. Get Token Balance with Invalid Symbol
+GET {{baseUrl}}/api/wallet/balance/
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Token symbol is required"
+### }
+
+### ========================================
+### ERROR HANDLING TESTS
+### ========================================
+
+### 16. Invalid Auth Token
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer invalid_token_here
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 17. Expired Auth Token
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer expired_token_here
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 18. Missing Auth Header
+GET {{baseUrl}}/api/wallet
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### PERFORMANCE TESTS
+### ========================================
+
+### 19. Multiple Concurrent Requests
+# Run these requests simultaneously to test performance
+
+### Request 1
+GET {{baseUrl}}/api/wallet/overview
+Authorization: Bearer {{authToken}}
+
+### Request 2
+GET {{baseUrl}}/api/wallet/addresses
+Authorization: Bearer {{authToken}}
+
+### Request 3
+GET {{baseUrl}}/api/wallet/balance/BTC
+Authorization: Bearer {{authToken}}
+
+### Request 4
+GET {{baseUrl}}/api/wallet/tokens
+
+### ========================================
+### INTEGRATION TESTS
+### ========================================
+
+### 20. Complete User Flow
+# 1. Sign in
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!"
+}
+
+# 2. Get supported tokens
+GET {{baseUrl}}/api/wallet/tokens
+
+# 3. Get wallet overview
+GET {{baseUrl}}/api/wallet/overview
+Authorization: Bearer {{authToken}}
+
+# 4. Get complete wallet info
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer {{authToken}}
+
+# 5. Get addresses
+GET {{baseUrl}}/api/wallet/addresses
+Authorization: Bearer {{authToken}}
+
+# 6. Get balances for each token
+GET {{baseUrl}}/api/wallet/balance/BTC
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/wallet/balance/ETH
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/wallet/balance/ADA
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/wallet/balance/SOL
+Authorization: Bearer {{authToken}}
+
+### ========================================
+### ENVIRONMENT VARIABLES
+### ========================================
+
+### Set these variables in your REST Client settings or use them directly
+
+@testEmail = test@example.com
+@testPassword = TestPassword123!
+@testUserId = your_user_id_here
+
+### ========================================
+### QUICK TEST TEMPLATES
+### ========================================
+
+### Quick Wallet Overview
+GET {{baseUrl}}/api/wallet/overview
+Authorization: Bearer {{authToken}}
+
+### Quick Token Balance Check
+GET {{baseUrl}}/api/wallet/balance/BTC
+Authorization: Bearer {{authToken}}
+
+### Quick Supported Tokens
+GET {{baseUrl}}/api/wallet/tokens
+
+### ========================================
+### NOTES
+### ========================================
+
+### Authentication:
+### - Most wallet endpoints require authentication
+### - Use the Bearer token from sign-in response
+### - /api/wallet/tokens is public (no auth required)
+
+### Token Symbols:
+### - BTC (Bitcoin)
+### - ETH (Ethereum)
+### - ADA (Cardano)
+### - SOL (Solana)
+
+### Response Format:
+### - All responses follow the standard format: { success: boolean, data?: any, message?: string }
+### - Error responses include error details
+### - Success responses include the requested data
+
+### Testing Tips:
+### - Test both authenticated and unauthenticated scenarios
+### - Verify error handling for invalid tokens/symbols
+### - Check response format consistency
+### - Test concurrent requests for performance 

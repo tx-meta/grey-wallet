@@ -61,12 +61,20 @@ const resetPasswordValidation = [
     .withMessage('Please provide a valid email address'),
 ];
 
+const refreshTokenValidation = [
+  body('refreshToken')
+    .notEmpty()
+    .withMessage('Refresh token is required'),
+];
+
 // Routes
 router.post('/signup', signUpValidation, validateRequest, authController.signUp.bind(authController));
 
 router.post('/login', loginValidation, validateRequest, authController.login.bind(authController));
 
 router.post('/logout', authController.logout.bind(authController));
+
+router.post('/refresh', refreshTokenValidation, validateRequest, authController.refreshToken.bind(authController));
 
 router.post('/reset-password', resetPasswordValidation, validateRequest, authController.resetPassword.bind(authController));
 

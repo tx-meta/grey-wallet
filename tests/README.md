@@ -26,9 +26,11 @@ The `api-tests.http` file contains comprehensive test cases for all API endpoint
 - **Sign Up**: `POST /api/auth/signup` (with validation)
 
 ### 🚧 Partially Implemented
-- **Sign In**: `POST /api/auth/login` (placeholder)
-- **Email Verification**: `POST /api/auth/verify-email` (placeholder)
+- **Sign In**: `POST /api/auth/login` (implemented)
 - **SMS Verification**: `POST /api/auth/verify-sms` (placeholder)
+
+### ✅ Handled by Supabase
+- **Email Verification**: Automatically handled by Supabase Auth
 
 ### 📋 Planned
 - **Password Reset**: `POST /api/auth/reset-password`
@@ -50,7 +52,7 @@ The `api-tests.http` file contains comprehensive test cases for all API endpoint
 3. **Non-existent User**: User not found
 
 ### Verification Tests
-1. **Email Verification**: Token-based email confirmation
+1. **Email Verification**: Handled automatically by Supabase Auth
 2. **SMS Verification**: Token-based phone confirmation
 
 ## Environment Variables

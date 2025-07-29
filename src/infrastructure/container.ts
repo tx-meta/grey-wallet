@@ -15,6 +15,7 @@ import { MockUserRepository } from './repositories/mock-user-repository';
 import { MockWalletRepository } from './repositories/mock-wallet-repository';
 import { MockTokenRepository } from './repositories/mock-token-repository';
 import { MockVaultService } from './services/mock-vault-service';
+
 import { MockNotificationService } from './services/mock-notification-service';
 import { MockCryptoService } from './services/mock-crypto-service';
 
@@ -23,12 +24,20 @@ import { ServiceFactory } from './factories/service-factory';
 
 // Import use cases
 import { SignUpUseCase } from '../domain/use_cases/sign-up';
+import { SignInUseCase } from '../domain/use_cases/sign-in';
+import { GetWalletInfoUseCase } from '../domain/use_cases/get-wallet-info';
+import { GetTokenBalanceUseCase } from '../domain/use_cases/get-token-balance';
+import { GetSupportedTokensUseCase } from '../domain/use_cases/get-supported-tokens';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
+import { WalletController } from '../presentation/controllers/wallet-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
+
+// Import middleware
+import { AuthMiddleware } from '../presentation/middleware/auth';
 
 export class Container {
   private static instance: Container;
@@ -147,14 +156,67 @@ export class Container {
       ));
     }
 
+    if (!this.services.has('SignInUseCase')) {
+      this.services.set('SignInUseCase', new SignInUseCase(
+        this.services.get('SupabaseAuthService'),
+        this.services.get('UserRepository')
+      ));
+    }
+
     if (!this.services.has('AuthController')) {
       this.services.set('AuthController', new AuthController(
         this.services.get('SignUpUseCase'),
+        this.services.get('SignInUseCase'),
         this.services.get('SupabaseAuthService')
       ));
     }
 
     return this.get<AuthController>('AuthController');
+  }
+
+  public getWalletController(): WalletController {
+    // Initialize wallet use cases if not already done
+    if (!this.services.has('GetWalletInfoUseCase')) {
+      this.services.set('GetWalletInfoUseCase', new GetWalletInfoUseCase(
+        this.services.get('WalletRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('UserRepository')
+      ));
+    }
+
+    if (!this.services.has('GetTokenBalanceUseCase')) {
+      this.services.set('GetTokenBalanceUseCase', new GetTokenBalanceUseCase(
+        this.services.get('WalletRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('UserRepository')
+      ));
+    }
+
+    if (!this.services.has('GetSupportedTokensUseCase')) {
+      this.services.set('GetSupportedTokensUseCase', new GetSupportedTokensUseCase(
+        this.services.get('TokenRepository')
+      ));
+    }
+
+    if (!this.services.has('WalletController')) {
+      this.services.set('WalletController', new WalletController(
+        this.services.get('GetWalletInfoUseCase'),
+        this.services.get('GetTokenBalanceUseCase'),
+        this.services.get('GetSupportedTokensUseCase')
+      ));
+    }
+
+    return this.get<WalletController>('WalletController');
+  }
+
+  public getAuthMiddleware(): AuthMiddleware {
+    if (!this.services.has('AuthMiddleware')) {
+      this.services.set('AuthMiddleware', new AuthMiddleware(
+        this.services.get('SupabaseAuthService')
+      ));
+    }
+
+    return this.get<AuthMiddleware>('AuthMiddleware');
   }
 
   public getRepositories() {

@@ -5,12 +5,14 @@
 
 import { Request, Response } from 'express';
 import { SignUpUseCase, SignUpRequest } from '../../domain/use_cases/sign-up';
+import { SignInUseCase, SignInRequest } from '../../domain/use_cases/sign-in';
 import { SupabaseAuthService } from '../../infrastructure/external_apis/supabase-auth';
 import logger from '../../shared/logging';
 
 export class AuthController {
   constructor(
     private signUpUseCase: SignUpUseCase,
+    private signInUseCase: SignInUseCase,
     private supabaseAuthService: SupabaseAuthService
   ) {}
 
@@ -87,59 +89,36 @@ export class AuthController {
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
+      const signInRequest: SignInRequest = {
+        email: req.body.email,
+        password: req.body.password,
+      };
 
-      if (!email || !password) {
-        res.status(400).json({
-          success: false,
-          message: 'Email and password are required',
-        });
-        return;
-      }
+      logger.info('Sign in request received', { email: signInRequest.email });
 
-      logger.info('Supabase login request', { email });
+      const result = await this.signInUseCase.execute(signInRequest);
 
-      const { user, session, error } = await this.supabaseAuthService.signIn(email, password);
-
-      if (error) {
+      if (!result.success) {
         res.status(401).json({
           success: false,
-          message: error,
+          message: result.error,
         });
         return;
       }
 
-      if (!user || !session) {
-        res.status(401).json({
-          success: false,
-          message: 'Invalid credentials',
-        });
-        return;
-      }
+      const { user, session } = result.data!;
 
-      logger.info('User logged in successfully', { userId: user.id });
+      logger.info('User signed in successfully', { userId: user.id });
 
       res.status(200).json({
         success: true,
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.user_metadata?.firstName,
-            lastName: user.user_metadata?.lastName,
-            country: user.user_metadata?.country,
-            currency: user.user_metadata?.currency,
-            phone: user.user_metadata?.phone,
-          },
-          session: {
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-            expiresAt: session.expires_at,
-          },
+          user,
+          session,
         },
       });
     } catch (error) {
-      logger.error('Supabase login error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      logger.error('Sign in error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
       res.status(500).json({
         success: false,
@@ -214,6 +193,73 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Password reset error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/refresh
+   * Refresh access token using refresh token
+   */
+  async refreshToken(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        res.status(400).json({
+          success: false,
+          message: 'Refresh token is required',
+        });
+        return;
+      }
+
+      logger.info('Token refresh request received');
+
+      const { user, session, error } = await this.supabaseAuthService.refreshToken(refreshToken);
+
+      if (error) {
+        res.status(401).json({
+          success: false,
+          message: error,
+        });
+        return;
+      }
+
+      if (!user || !session) {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid refresh token',
+        });
+        return;
+      }
+
+      logger.info('Token refreshed successfully', { userId: user.id });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.user_metadata?.firstName,
+            lastName: user.user_metadata?.lastName,
+            country: user.user_metadata?.country,
+            currency: user.user_metadata?.currency,
+            phone: user.user_metadata?.phone,
+          },
+          session: {
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token,
+            expiresAt: session.expires_at,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error('Token refresh error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
       res.status(500).json({
         success: false,

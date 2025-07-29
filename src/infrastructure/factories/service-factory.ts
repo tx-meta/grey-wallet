@@ -14,6 +14,7 @@ import { CryptoService } from '../../application/interfaces/crypto-service';
 import { PrismaUserRepository } from '../repositories/prisma-user-repository';
 import { PrismaWalletRepository } from '../repositories/prisma-wallet-repository';
 import { PrismaTokenRepository } from '../repositories/prisma-token-repository';
+import { HashiCorpVaultService } from '../services/hashicorp-vault-service';
 
 export class ServiceFactory {
   /**
@@ -39,11 +40,16 @@ export class ServiceFactory {
 
   /**
    * Creates a real VaultService implementation
-   * TODO: Implement when HashiCorp Vault integration is ready
    */
   static createVaultService(): VaultService {
-    // TODO: Return new HashiCorpVaultService() when implemented
-    throw new Error('Real VaultService implementation not yet available');
+    const vaultUrl = process.env['VAULT_URL'];
+    const vaultToken = process.env['VAULT_TOKEN'];
+
+    if (!vaultUrl || !vaultToken) {
+      throw new Error('VAULT_URL and VAULT_TOKEN environment variables are required for HashiCorp Vault service');
+    }
+
+    return new HashiCorpVaultService();
   }
 
   /**

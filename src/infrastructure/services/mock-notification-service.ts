@@ -7,10 +7,6 @@ import { NotificationService } from '../../application/interfaces/notification-s
 import logger from '../../../shared/logging';
 
 export class MockNotificationService implements NotificationService {
-  async sendEmailVerification(email: string, token: string, userName: string): Promise<void> {
-    logger.info('Mock notification: email verification sent', { email, userName, token });
-  }
-
   async sendEmailWelcome(email: string, userName: string): Promise<void> {
     logger.info('Mock notification: welcome email sent', { email, userName });
   }

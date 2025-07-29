@@ -58,7 +58,7 @@ export class MockWalletRepository implements WalletRepository {
     console.log(`Adding user address: userId=${userId}, walletId=${walletId}, address=${address}`);
   }
 
-  async findUserAddresses(_userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string }[]> {
+  async findUserAddresses(_userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string; tokenBalance: number }[]> {
     // In a real implementation, this would query the database
     // For mock purposes, return empty array
     return [];

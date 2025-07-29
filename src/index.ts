@@ -75,8 +75,6 @@ class App {
   private initializeRoutes(): void {
     // API routes - Using Supabase authentication
     this.app.use('/api/auth', authRoutes);
-    logger.info('Using Supabase authentication');
-    
     this.app.use('/api/wallet', walletRoutes);
     this.app.use('/api/user', userRoutes);
 
@@ -101,7 +99,6 @@ class App {
     this.app.listen(port, host, () => {
       logger.info(`Server running on http://${host}:${port}`);
       logger.info(`Environment: ${config.server.nodeEnv}`);
-      logger.info(`CORS Origin: ${config.server.corsOrigin}`);
     });
   }
 }

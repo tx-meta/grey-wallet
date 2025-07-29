@@ -41,6 +41,16 @@ export class SupabaseAuthService {
   }
 
   /**
+   * Set authentication token for the current session
+   */
+  setAuthToken(token: string): void {
+    this.supabase.auth.setSession({
+      access_token: token,
+      refresh_token: '',
+    });
+  }
+
+  /**
    * Sign up a new user with Supabase Auth
    */
   async signUp(data: SignUpData): Promise<{ user: SupabaseUser | null; error: string | null; isNewUser: boolean }> {
@@ -161,6 +171,32 @@ export class SupabaseAuthService {
     } catch (error) {
       logger.error('Sign out exception', { error: error instanceof Error ? error.message : 'Unknown error' });
       return { error: 'Internal server error' };
+    }
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshToken(refreshToken: string): Promise<{ user: SupabaseUser | null; session: any; error: string | null }> {
+    try {
+      const { data, error } = await this.supabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        logger.error('Token refresh error', { error: error.message });
+        return { user: null, session: null, error: error.message };
+      }
+
+      logger.info('Token refreshed successfully', { userId: data.user?.id });
+      return { 
+        user: data.user as SupabaseUser, 
+        session: data.session, 
+        error: null 
+      };
+    } catch (error) {
+      logger.error('Token refresh exception', { error: error instanceof Error ? error.message : 'Unknown error' });
+      return { user: null, session: null, error: 'Internal server error' };
     }
   }
 

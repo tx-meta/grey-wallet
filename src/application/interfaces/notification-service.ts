@@ -5,7 +5,6 @@
 
 export interface NotificationService {
   // Email notifications
-  sendEmailVerification(email: string, token: string, userName: string): Promise<void>;
   sendEmailWelcome(email: string, userName: string): Promise<void>;
   sendEmailPasswordReset(email: string, token: string, userName: string): Promise<void>;
   sendEmailTransactionNotification(email: string, transactionDetails: any): Promise<void>;

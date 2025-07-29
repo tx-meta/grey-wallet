@@ -148,18 +148,215 @@ FROM_EMAIL=noreply@greywallet.com
 - `POST /api/auth/signup` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
-- `POST /api/auth/reset-password` - Password reset
+- `POST /api/auth/refresh` - Refresh access token
 - `GET /api/auth/me` - Get current user profile
+- `POST /api/auth/reset-password` - Send password reset email
+
+### Authentication API Details
+
+#### Sign In
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user-uuid",
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "country": "United States",
+      "currency": "USD",
+      "phone": "+1234567890",
+      "isEmailVerified": true,
+      "isPhoneVerified": false,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "session": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expiresAt": 1704067200
+    }
+  }
+}
+```
+
+#### Refresh Token
+```http
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Get Current User
+```http
+GET /api/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### Logout
+```http
+POST /api/auth/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Wallet API Details
+
+#### Get Supported Tokens (Public)
+```http
+GET /api/wallet/tokens
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "tokens": [
+      {
+        "tokenId": "uuid",
+        "name": "Bitcoin",
+        "symbol": "BTC",
+        "icon": "/icons/bitcoin.svg",
+        "isActive": true,
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "totalTokens": 4,
+    "activeTokens": 4,
+    "lastUpdated": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### Get Wallet Overview
+```http
+GET /api/wallet/overview
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "userId": "user-uuid",
+    "userEmail": "user@example.com",
+    "totalBalance": 0,
+    "totalTokens": 4,
+    "supportedTokens": 4,
+    "activeTokens": 4,
+    "lastUpdated": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### Get Complete Wallet Information
+```http
+GET /api/wallet
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "userId": "user-uuid",
+    "userEmail": "user@example.com",
+    "totalBalance": 0,
+    "totalTokens": 4,
+    "addresses": [
+      {
+        "tokenSymbol": "BTC",
+        "tokenName": "Bitcoin",
+        "tokenIcon": "/icons/bitcoin.svg",
+        "address": "bc1q...",
+        "tokenBalance": 0,
+        "walletBalance": 0,
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "lastUpdated": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### Get Wallet Addresses
+```http
+GET /api/wallet/addresses
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "userId": "user-uuid",
+    "addresses": [
+      {
+        "tokenSymbol": "BTC",
+        "tokenName": "Bitcoin",
+        "tokenIcon": "/icons/bitcoin.svg",
+        "address": "bc1q...",
+        "tokenBalance": 0,
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "totalAddresses": 4
+  }
+}
+```
+
+#### Get Token Balance
+```http
+GET /api/wallet/balance/BTC
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "tokenSymbol": "BTC",
+    "tokenName": "Bitcoin",
+    "tokenIcon": "/icons/bitcoin.svg",
+    "address": "bc1q...",
+    "userBalance": 0,
+    "walletBalance": 0,
+    "isActive": true,
+    "lastUpdated": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
 
 ### Users
 - `GET /api/user` - Get user profile
 - `PUT /api/user` - Update user profile
 
 ### Wallet
-- `GET /api/wallet` - Get wallet information
-- `GET /api/wallet/addresses` - Get wallet addresses
-- `POST /api/wallet/send` - Send transaction
-- `GET /api/wallet/transactions` - Get transaction history
+- `GET /api/wallet` - Get comprehensive wallet information
+- `GET /api/wallet/overview` - Get wallet overview with summary
+- `GET /api/wallet/addresses` - Get all wallet addresses
+- `GET /api/wallet/balance/:tokenSymbol` - Get balance for specific token
+- `GET /api/wallet/tokens` - Get all supported tokens (public)
+- `POST /api/wallet/send` - Send transaction (future)
+- `GET /api/wallet/transactions` - Get transaction history (future)
 
 ## Database Schema
 

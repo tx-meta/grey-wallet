@@ -4,6 +4,11 @@
 @baseUrl = http://localhost:3000
 @contentType = application/json
 
+@jsonWebToken = eyJhbGciOiJIUzI1NiIsImtpZCI6ImxUZllXOHM2K1I5b05EWDAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2hrYWxjdGZnZ3ViYXBxb3RjZWFoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI5MTAyZjNmMy01NGEyLTRhMWQtOTFkYy1iNTc4ZTdmYzU3MWEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzNzkxNTgxLCJpYXQiOjE3NTM3ODc5ODEsImVtYWlsIjoibXVoaW5kaWtuQGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiY291bnRyeSI6IlVuaXRlZCBTdGF0ZXMiLCJjdXJyZW5jeSI6IlVTRCIsImVtYWlsIjoibXVoaW5kaWtuQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJzdE5hbWUiOiJKb2huIiwibGFzdE5hbWUiOiJEb2UiLCJwaG9uZSI6IisxMjM0NTY3ODkwIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiI5MTAyZjNmMy01NGEyLTRhMWQtOTFkYy1iNTc4ZTdmYzU3MWEifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1Mzc4Nzk4MX1dLCJzZXNzaW9uX2lkIjoiZDQ1ZjZmNWEtYWY1Zi00Mjk4LWI1ZTUtOTJkZGJhNDI5ZGFmIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.HpoWKTu3UglwS_yrOIDOOsveGmTkx_0YWU5YyhQ4QKw 
+
+@refreshToken = nsprkwpbhslm
+@currentUserId = 9102f3f3-54a2-4a1d-91dc-b578e7fc571a
+
 ### ========================================
 ### HEALTH CHECK
 ### ========================================
@@ -20,13 +25,13 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "muhindi.kn@gmail.com",
-  "phone": "+1234567890",
+  "email": "kmuhindi@proton.me",
+  "phone": "+254700123456",
   "password": "TestPassword123!",
-  "firstName": "John",
-  "lastName": "Doe",
-  "country": "United States",
-  "currency": "USD"
+  "firstName": "Muhindi",
+  "lastName": "Briggs",
+  "country": "Kenya",
+  "currency": "KES"
 }
 
 ### 2. Another Valid Sign Up (Different User)
@@ -34,13 +39,13 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@proton.me",
-  "phone": "+1987654321",
+  "email": "test1@gmailer.com",
+  "phone": "+254700123456",
   "password": "SecurePass456!",
   "firstName": "Jane",
   "lastName": "Smith",
-  "country": "Canada",
-  "currency": "CAD"
+  "country": "Kenya",
+  "currency": "KES"
 }
 
 ### 3. Sign Up with Different Currency
@@ -159,7 +164,7 @@ Content-Type: {{contentType}}
 }
 
 ### ========================================
-### SIGN IN TESTS (when implemented)
+### SIGN IN TESTS
 ### ========================================
 
 ### 11. Valid Sign In
@@ -167,7 +172,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "muhindi.kn@gmail.com",
+  "email": "kmuhindi@proton.me",
   "password": "TestPassword123!"
 }
 
@@ -189,20 +194,79 @@ Content-Type: {{contentType}}
   "password": "TestPassword123!"
 }
 
-### ========================================
-### VERIFICATION TESTS (when implemented)
-### ========================================
-
-### 14. Email Verification
-POST {{baseUrl}}/api/auth/verify-email
+### 14. Missing Email
+POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "userId": "d4550b67-5bcf-4c1d-971d-ecd6e7c22b49",
-  "token": "91ba1f71c8ced9f455aaadcd344b3c2a2a5432392a007a1d43b47fd252d95737"
+  "password": "TestPassword123!"
 }
 
-### 15. SMS Verification
+### 15. Missing Password
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "john.doe@example.com"
+}
+
+### 16. Invalid Email Format
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "invalid-email",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### TOKEN REFRESH TESTS
+### ========================================
+
+### 17. Refresh Token
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "your_refresh_token_here"
+}
+
+### 18. Invalid Refresh Token
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "invalid_token"
+}
+
+### 19. Missing Refresh Token
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{}
+
+### ========================================
+### CURRENT USER TESTS
+### ========================================
+
+### 20. Get Current User (with auth)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{jsonWebToken}} 
+
+### 21. Get Current User (without auth)
+GET {{baseUrl}}/api/auth/me
+Content-Type: {{contentType}}
+
+{
+  "email": "nonexistent@example.com",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### SMS VERIFICATION TESTS (when implemented)
+### ========================================
+
+### 14. SMS Verification
 POST {{baseUrl}}/api/auth/verify-sms
 Content-Type: {{contentType}}
 
@@ -230,7 +294,7 @@ Content-Type: {{contentType}}
 ### 17. Get Current User Profile
 GET {{baseUrl}}/api/auth/me
 Content-Type: {{contentType}}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Authorization: Bearer {{jsonWebToken}} 
 
 ### ========================================
 ### WALLET TESTS (when implemented)
@@ -239,12 +303,12 @@ Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ### 18. Get Wallet Information
 GET {{baseUrl}}/api/wallet
 Content-Type: {{contentType}}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Authorization: Bearer {{jsonWebToken}} 
 
 ### 19. Get Wallet Addresses
 GET {{baseUrl}}/api/wallet/addresses
 Content-Type: {{contentType}}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Authorization: Bearer {{jsonWebToken}} 
 
 ### ========================================
 ### USER TESTS (when implemented)
@@ -253,7 +317,7 @@ Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ### 20. Get User Profile
 GET {{baseUrl}}/api/user
 Content-Type: {{contentType}}
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Authorization: Bearer {{jsonWebToken}} 
 
 ### ========================================
 ### ENVIRONMENT VARIABLES

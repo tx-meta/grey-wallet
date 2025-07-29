@@ -17,5 +17,5 @@ export interface WalletRepository {
   // Address management
   getAndIncrementAddressIndex(walletId: string): Promise<number>;
   addUserAddress(userId: string, walletId: string, address: string): Promise<void>;
-  findUserAddresses(userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string }[]>;
+  findUserAddresses(userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string; tokenBalance: number }[]>;
 } 

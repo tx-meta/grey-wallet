@@ -27,9 +27,9 @@ export interface VaultService {
   deleteMnemonic(path: string): Promise<void>;
 
   // Verification token management
-  storeVerificationToken(userId: string, type: 'email' | 'sms', token: string): Promise<void>;
-  getVerificationToken(userId: string, type: 'email' | 'sms'): Promise<string | null>;
-  deleteVerificationToken(userId: string, type: 'email' | 'sms'): Promise<void>;
+  storeVerificationToken(userId: string, type:  'sms', token: string): Promise<void>;
+  getVerificationToken(userId: string, type: 'sms'): Promise<string | null>;
+  deleteVerificationToken(userId: string, type:  'sms'): Promise<void>;
 
   // Master wallet key management
   storeMasterWalletKey(tokenSymbol: string, privateKey: string): Promise<void>;

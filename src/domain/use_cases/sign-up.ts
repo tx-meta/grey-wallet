@@ -107,10 +107,11 @@ export class SignUpUseCase {
         lastName: signUpData.lastName,
       });
       
-      // Override the ID to match Supabase user ID for consistency
+      // Override the ID and email verification status to match Supabase
       const userWithSupabaseId = new User({
         ...localUser.toJSON(),
         id: supabaseUser.id,
+        isEmailVerified: !!supabaseUser.email_confirmed_at, // Sync with Supabase's status
       });
       
       try {
@@ -143,7 +144,7 @@ export class SignUpUseCase {
           createdAt: supabaseUser.created_at,
         },
         addresses: userAddresses,
-        requiresEmailConfirmation: !supabaseUser.email_confirmed_at || false,
+        requiresEmailConfirmation: !supabaseUser.email_confirmed_at, // Use Supabase's status
       };
 
       return {
