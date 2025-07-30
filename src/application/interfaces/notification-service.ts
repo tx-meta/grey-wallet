@@ -13,6 +13,7 @@ export interface NotificationService {
   sendSMSVerification(phone: string, token: string): Promise<void>;
   sendSMSTransactionNotification(phone: string, transactionDetails: any): Promise<void>;
   sendSMSWelcome(phone: string, userName: string): Promise<void>;
+  sendSMSOTP(phone: string, otp: string, expiresIn: number): Promise<{ success: boolean; error?: string }>;
 
   // Health check
   isHealthy(): Promise<boolean>;

@@ -152,6 +152,10 @@ FROM_EMAIL=noreply@greywallet.com
 - `GET /api/auth/me` - Get current user profile
 - `POST /api/auth/reset-password` - Send password reset email
 
+### Phone Verification
+- `POST /api/phone/send-otp` - Send phone OTP
+- `POST /api/phone/verify-otp` - Verify phone OTP
+
 ### Authentication API Details
 
 #### Sign In
@@ -211,6 +215,48 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```http
 POST /api/auth/logout
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Phone Verification API Details
+
+#### Send Phone OTP
+```http
+POST /api/phone/send-otp
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "OTP sent successfully",
+    "expiresIn": 300
+  }
+}
+```
+
+#### Verify Phone OTP
+```http
+POST /api/phone/verify-otp
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "otp": "123456"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "Phone number verified successfully"
+  }
+}
 ```
 
 ### Wallet API Details

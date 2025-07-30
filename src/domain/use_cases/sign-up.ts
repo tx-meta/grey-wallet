@@ -14,6 +14,7 @@ import { NotificationService } from '../../application/interfaces/notification-s
 import { SupabaseAuthService, SignUpData } from '../../infrastructure/external_apis/supabase-auth';
 import { generateMnemonic, encryptMnemonic, decryptMnemonic } from '../../shared/utils/crypto';
 import { getDerivationStrategy } from '../derivation/DerivationRegistry';
+import logger from '../../shared/logging';
 
 export interface SignUpRequest {
   email: string;
@@ -131,7 +132,10 @@ export class SignUpUseCase {
       // 6. Send welcome notifications
       await this.sendWelcomeNotifications(supabaseUser, signUpData);
 
-      // 7. Prepare response
+      // 7. Send phone OTP for verification
+      await this.sendPhoneOTP(supabaseUser.id);
+
+      // 8. Prepare response
       const responseData: SignUpResponse = {
         user: {
           id: supabaseUser.id,
@@ -254,5 +258,38 @@ export class SignUpUseCase {
 
     // Send welcome SMS
     await this.notificationService.sendSMSWelcome(userData.phone, fullName);
+  }
+
+  private async sendPhoneOTP(userId: string): Promise<void> {
+    try {
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresIn = 300; // 5 minutes
+      const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+      // Store OTP in Vault
+      await this.vaultService.storeVerificationToken(
+        userId,
+        'sms',
+        JSON.stringify({
+          otp,
+          expiresAt: expiresAt.toISOString(),
+          attempts: 0
+        })
+      );
+
+      // Get user phone number
+      const user = await this.userRepository.findById(userId);
+      if (user) {
+        // Send SMS OTP
+        await this.notificationService.sendSMSOTP(user.phone, otp, expiresIn);
+      }
+    } catch (error) {
+      logger.error('Failed to send phone OTP during sign-up', { 
+        userId, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      // Don't fail the sign-up process if OTP sending fails
+    }
   }
 } 

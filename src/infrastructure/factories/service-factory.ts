@@ -15,6 +15,7 @@ import { PrismaUserRepository } from '../repositories/prisma-user-repository';
 import { PrismaWalletRepository } from '../repositories/prisma-wallet-repository';
 import { PrismaTokenRepository } from '../repositories/prisma-token-repository';
 import { HashiCorpVaultService } from '../services/hashicorp-vault-service';
+import { CelcomSMSService } from '../services/celcom-sms-service';
 
 export class ServiceFactory {
   /**
@@ -54,11 +55,9 @@ export class ServiceFactory {
 
   /**
    * Creates a real NotificationService implementation
-   * TODO: Implement when Twilio/SendGrid integration is ready
    */
   static createNotificationService(): NotificationService {
-    // TODO: Return new TwilioSendGridNotificationService() when implemented
-    throw new Error('Real NotificationService implementation not yet available');
+    return new CelcomSMSService();
   }
 
   /**

@@ -1,0 +1,66 @@
+### Phone OTP Verification Tests
+
+# Variables
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+@currentUserId = {{login.response.body.user.id}}
+
+### 1. Login to get authentication token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "kmuhindi@proton.me",
+  "password": "TestPassword123!"
+}
+
+### 2. Send Phone OTP
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### 3. Verify Phone OTP (Replace 123456 with actual OTP received)
+POST {{baseUrl}}/api/phone/verify-otp
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "otp": "123456"
+}
+
+### 4. Try to verify with invalid OTP
+POST {{baseUrl}}/api/phone/verify-otp
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "otp": "000000"
+}
+
+### 5. Try to send OTP again (should fail if already verified)
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### 6. Try to verify OTP again (should fail if already verified)
+POST {{baseUrl}}/api/phone/verify-otp
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "otp": "123456"
+}
+
+### 7. Test without authentication
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: application/json
+
+### 8. Test without authentication
+POST {{baseUrl}}/api/phone/verify-otp
+Content-Type: application/json
+
+{
+  "otp": "123456"
+} 

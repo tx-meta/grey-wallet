@@ -27,10 +27,13 @@ import { SignInUseCase } from '../domain/use_cases/sign-in';
 import { GetWalletInfoUseCase } from '../domain/use_cases/get-wallet-info';
 import { GetTokenBalanceUseCase } from '../domain/use_cases/get-token-balance';
 import { GetSupportedTokensUseCase } from '../domain/use_cases/get-supported-tokens';
+import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
+import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
 import { WalletController } from '../presentation/controllers/wallet-controller';
+import { PhoneVerificationController } from '../presentation/controllers/phone-verification-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -214,6 +217,33 @@ export class Container {
     }
 
     return this.get<WalletController>('WalletController');
+  }
+
+  public getPhoneVerificationController(): PhoneVerificationController {
+    // Initialize phone verification use cases if not already done
+    if (!this.services.has('SendPhoneOTPUseCase')) {
+      this.services.set('SendPhoneOTPUseCase', new SendPhoneOTPUseCase(
+        this.services.get('UserRepository'),
+        this.services.get('VaultService'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('VerifyPhoneOTPUseCase')) {
+      this.services.set('VerifyPhoneOTPUseCase', new VerifyPhoneOTPUseCase(
+        this.services.get('UserRepository'),
+        this.services.get('VaultService')
+      ));
+    }
+
+    if (!this.services.has('PhoneVerificationController')) {
+      this.services.set('PhoneVerificationController', new PhoneVerificationController(
+        this.services.get('SendPhoneOTPUseCase'),
+        this.services.get('VerifyPhoneOTPUseCase')
+      ));
+    }
+
+    return this.get<PhoneVerificationController>('PhoneVerificationController');
   }
 
   public getAuthMiddleware(): AuthMiddleware {
