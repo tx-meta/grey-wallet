@@ -113,7 +113,7 @@ export class InitiateCryptoPurchaseUseCase {
         phoneNumber: request.phoneNumber,
         accountReference: transactionId,
         transactionDesc: `Crypto purchase - ${request.tokenSymbol}`,
-        callbackUrl: `${process.env['API_BASE_URL']}/api/payments/mpesa/callback`
+        callbackUrl: `${process.env['DARAJA_STK_PUSH_RESULT_URL']}/api/payments/mpesa/callback`
       });
 
       if (!paymentResult.success) {
