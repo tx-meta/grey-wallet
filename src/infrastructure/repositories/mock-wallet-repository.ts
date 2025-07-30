@@ -121,4 +121,47 @@ export class MockWalletRepository implements WalletRepository {
     // For mock purposes, just log
     console.log('Mock: Updated user token balance', { userId, tokenSymbol, amount });
   }
+
+  async getTransactionById(transactionId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+    checkoutRequestId: string | null;
+    merchantRequestId: string | null;
+    mpesaReceiptNumber: string | null;
+    transactionDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null> {
+    // In a real implementation, this would query the database
+    // For mock purposes, return a mock transaction if the ID matches a pattern
+    console.log('Mock: Getting transaction by ID', { transactionId });
+    
+    // Return a mock transaction for testing purposes
+    if (transactionId.startsWith('mock-transaction-')) {
+      return {
+        id: transactionId,
+        userId: 'mock-user-id',
+        transactionType: 'ON_RAMP',
+        tokenSymbol: 'BTC',
+        fiatAmount: 1000,
+        cryptoAmount: 0.00022222,
+        phoneNumber: '254700000000',
+        status: 'processing',
+        checkoutRequestId: 'ws_CO_123456789',
+        merchantRequestId: '12345-67890-12345',
+        mpesaReceiptNumber: null,
+        transactionDate: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+    
+    return null;
+  }
 } 

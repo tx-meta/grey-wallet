@@ -225,6 +225,50 @@ export class PrismaWalletRepository implements WalletRepository {
     });
   }
 
+  async getTransactionById(transactionId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+    checkoutRequestId: string | null;
+    merchantRequestId: string | null;
+    mpesaReceiptNumber: string | null;
+    transactionDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null> {
+    const transaction = await prisma.transaction.findUnique({
+      where: { transactionId },
+    });
+
+    if (!transaction || !transaction.userId || !transaction.tokenSymbol || 
+        transaction.fiatAmount === null || transaction.cryptoAmount === null || 
+        !transaction.phoneNumber || !transaction.transactionType) {
+      return null;
+    }
+
+    return {
+      id: transaction.transactionId,
+      userId: transaction.userId,
+      transactionType: transaction.transactionType,
+      tokenSymbol: transaction.tokenSymbol,
+      fiatAmount: transaction.fiatAmount,
+      cryptoAmount: transaction.cryptoAmount,
+      phoneNumber: transaction.phoneNumber,
+      status: transaction.status,
+      checkoutRequestId: transaction.checkoutRequestId,
+      merchantRequestId: transaction.merchantRequestId,
+      mpesaReceiptNumber: transaction.mpesaReceiptNumber,
+      transactionDate: transaction.transactionDate,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+    };
+  }
+
   private mapToDomain(prismaWallet: any): Wallet {
     return new Wallet({
       walletId: prismaWallet.walletId,

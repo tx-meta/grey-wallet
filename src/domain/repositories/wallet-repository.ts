@@ -54,4 +54,21 @@ export interface WalletRepository {
   }): Promise<void>;
   
   updateUserTokenBalance(userId: string, tokenSymbol: string, amount: number): Promise<void>;
+  
+  getTransactionById(transactionId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+    checkoutRequestId: string | null;
+    merchantRequestId: string | null;
+    mpesaReceiptNumber: string | null;
+    transactionDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null>;
 } 

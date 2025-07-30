@@ -75,7 +75,7 @@ export class InitiateCryptoPurchaseUseCase {
       }
 
       // 4. Validate amount limits
-      const minAmount = 10; // 10 KES minimum
+      const minAmount = 1; // 10 KES minimum
       const maxAmount = 70000; // 70,000 KES maximum (M-Pesa limit)
       
       if (request.fiatAmount < minAmount || request.fiatAmount > maxAmount) {

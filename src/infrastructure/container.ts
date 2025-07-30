@@ -31,6 +31,7 @@ import { GetTokenBalanceUseCase } from '../domain/use_cases/get-token-balance';
 import { GetSupportedTokensUseCase } from '../domain/use_cases/get-supported-tokens';
 import { InitiateCryptoPurchaseUseCase } from '../domain/use_cases/initiate-crypto-purchase';
 import { ProcessPaymentCallbackUseCase } from '../domain/use_cases/process-payment-callback';
+import { GetTransactionStatusUseCase } from '../domain/use_cases/get-transaction-status';
 import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 
@@ -262,10 +263,17 @@ export class Container {
       ));
     }
 
+    if (!this.services.has('GetTransactionStatusUseCase')) {
+      this.services.set('GetTransactionStatusUseCase', new GetTransactionStatusUseCase(
+        this.services.get('WalletRepository')
+      ));
+    }
+
     if (!this.services.has('PaymentController')) {
       this.services.set('PaymentController', new PaymentController(
         this.services.get('InitiateCryptoPurchaseUseCase'),
-        this.services.get('ProcessPaymentCallbackUseCase')
+        this.services.get('ProcessPaymentCallbackUseCase'),
+        this.services.get('GetTransactionStatusUseCase')
       ));
     }
 

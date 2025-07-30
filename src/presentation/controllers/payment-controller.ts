@@ -6,12 +6,14 @@
 import { Request, Response } from 'express';
 import { InitiateCryptoPurchaseUseCase } from '../../domain/use_cases/initiate-crypto-purchase';
 import { ProcessPaymentCallbackUseCase } from '../../domain/use_cases/process-payment-callback';
+import { GetTransactionStatusUseCase } from '../../domain/use_cases/get-transaction-status';
 import logger from '../../shared/logging';
 
 export class PaymentController {
   constructor(
     private initiateCryptoPurchaseUseCase: InitiateCryptoPurchaseUseCase,
-    private processPaymentCallbackUseCase: ProcessPaymentCallbackUseCase
+    private processPaymentCallbackUseCase: ProcessPaymentCallbackUseCase,
+    private getTransactionStatusUseCase: GetTransactionStatusUseCase
   ) {}
 
   /**
@@ -169,15 +171,33 @@ export class PaymentController {
         return;
       }
 
-      // This would need to be implemented in the wallet repository
-      // For now, return a placeholder response
+      logger.info('Get purchase status request received', { 
+        userId, 
+        purchaseId 
+      });
+
+      const result = await this.getTransactionStatusUseCase.execute({
+        transactionId: purchaseId,
+        userId
+      });
+
+      if (!result.success) {
+        res.status(404).json({
+          success: false,
+          message: result.error,
+        });
+        return;
+      }
+
+      logger.info('Purchase status retrieved successfully', { 
+        userId, 
+        purchaseId,
+        status: result.data?.status 
+      });
+
       res.status(200).json({
         success: true,
-        data: {
-          transactionId: purchaseId,
-          status: 'processing',
-          message: 'Transaction status endpoint not yet implemented'
-        }
+        data: result.data,
       });
     } catch (error) {
       logger.error('Get purchase status error', { 

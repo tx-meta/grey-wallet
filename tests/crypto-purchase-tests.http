@@ -5,6 +5,7 @@
 @authToken = {{login.response.body.accessToken}}
 @refreshToken = {{login.response.body.refreshToken}}
 @currentUserId = {{login.response.body.user.id}}
+@transactionId = d6506aa0-8197-4bb0-aaa2-3929d2267e9f 
 
 ### 1. Login to get authentication token
 # @name login
@@ -23,8 +24,8 @@ Authorization: Bearer {{authToken}}
 
 {
   "tokenSymbol": "BTC",
-  "fiatAmount": 1000,
-  "phoneNumber": "254700000000"
+  "fiatAmount": 1,
+  "phoneNumber": "254726367035"
 }
 
 ### 3. Initiate Crypto Purchase (ETH)
@@ -35,7 +36,7 @@ Authorization: Bearer {{authToken}}
 {
   "tokenSymbol": "ETH",
   "fiatAmount": 500,
-  "phoneNumber": "254700000000"
+  "phoneNumber": "254726367035"
 }
 
 ### 4. Initiate Crypto Purchase (Invalid Amount - Too Low)
@@ -46,7 +47,7 @@ Authorization: Bearer {{authToken}}
 {
   "tokenSymbol": "BTC",
   "fiatAmount": 5,
-  "phoneNumber": "254700000000"
+  "phoneNumber": "254726367035"
 }
 
 ### 5. Initiate Crypto Purchase (Invalid Amount - Too High)
@@ -57,7 +58,7 @@ Authorization: Bearer {{authToken}}
 {
   "tokenSymbol": "BTC",
   "fiatAmount": 100000,
-  "phoneNumber": "254700000000"
+  "phoneNumber": "254726367035"
 }
 
 ### 6. Initiate Crypto Purchase (Invalid Token)
@@ -68,7 +69,7 @@ Authorization: Bearer {{authToken}}
 {
   "tokenSymbol": "INVALID",
   "fiatAmount": 1000,
-  "phoneNumber": "254700000000"
+  "phoneNumber": "254726367035"
 }
 
 ### 7. Initiate Crypto Purchase (Missing Fields)
