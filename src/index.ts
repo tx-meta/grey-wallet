@@ -18,6 +18,7 @@ import authRoutes from './presentation/routes/auth-routes';
 import walletRoutes from './presentation/routes/wallet-routes';
 import userRoutes from './presentation/routes/user-routes';
 import phoneVerificationRoutes from './presentation/routes/phone-verification-routes';
+import paymentRoutes from './presentation/routes/payment-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
@@ -79,6 +80,7 @@ class App {
     this.app.use('/api/wallet', walletRoutes);
     this.app.use('/api/user', userRoutes);
     this.app.use('/api/phone', phoneVerificationRoutes);
+    this.app.use('/api/payments', paymentRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {

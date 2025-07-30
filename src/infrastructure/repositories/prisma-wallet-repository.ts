@@ -121,6 +121,110 @@ export class PrismaWalletRepository implements WalletRepository {
     }));
   }
 
+  async createTransaction(transactionData: {
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    exchangeRate: number;
+    platformFee: number;
+    totalAmount: number;
+    phoneNumber: string;
+    status: string;
+  }): Promise<string> {
+    const transaction = await prisma.transaction.create({
+      data: {
+        // Required fields for existing Transaction model
+        transactionDirection: 'IN',
+        paymentType: 'CRYPTO_PURCHASE',
+        from: 'MPESA',
+        to: transactionData.userId,
+        amount: transactionData.totalAmount,
+        
+        // New fields for crypto purchases
+        userId: transactionData.userId,
+        transactionType: transactionData.transactionType,
+        tokenSymbol: transactionData.tokenSymbol,
+        fiatAmount: transactionData.fiatAmount,
+        cryptoAmount: transactionData.cryptoAmount,
+        exchangeRate: transactionData.exchangeRate,
+        platformFee: transactionData.platformFee,
+        totalAmount: transactionData.totalAmount,
+        phoneNumber: transactionData.phoneNumber,
+        status: transactionData.status,
+      },
+    });
+
+    return transaction.transactionId;
+  }
+
+  async findTransactionByCheckoutId(checkoutRequestId: string): Promise<{
+    id: string;
+    userId: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null> {
+    const transaction = await prisma.transaction.findFirst({
+      where: { checkoutRequestId },
+    });
+
+    if (!transaction || !transaction.userId || !transaction.tokenSymbol || 
+        transaction.fiatAmount === null || transaction.cryptoAmount === null || 
+        !transaction.phoneNumber) {
+      return null;
+    }
+
+    return {
+      id: transaction.transactionId,
+      userId: transaction.userId,
+      tokenSymbol: transaction.tokenSymbol,
+      fiatAmount: transaction.fiatAmount,
+      cryptoAmount: transaction.cryptoAmount,
+      phoneNumber: transaction.phoneNumber,
+      status: transaction.status,
+    };
+  }
+
+  async updateTransactionStatus(transactionId: string, status: string): Promise<void> {
+    await prisma.transaction.update({
+      where: { transactionId },
+      data: { status },
+    });
+  }
+
+  async updateTransactionPaymentDetails(transactionId: string, paymentDetails: {
+    checkoutRequestId?: string;
+    merchantRequestId?: string;
+    mpesaReceiptNumber?: string;
+    transactionDate?: string;
+    status?: string;
+  }): Promise<void> {
+    await prisma.transaction.update({
+      where: { transactionId },
+      data: paymentDetails,
+    });
+  }
+
+  async updateUserTokenBalance(userId: string, tokenSymbol: string, amount: number): Promise<void> {
+    await prisma.userAddress.updateMany({
+      where: {
+        userId,
+        wallet: {
+          tokenSymbol,
+        },
+      },
+      data: {
+        tokenBalance: {
+          increment: amount,
+        },
+      },
+    });
+  }
+
   private mapToDomain(prismaWallet: any): Wallet {
     return new Wallet({
       walletId: prismaWallet.walletId,

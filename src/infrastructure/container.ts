@@ -15,8 +15,10 @@ import { MockUserRepository } from './repositories/mock-user-repository';
 import { MockWalletRepository } from './repositories/mock-wallet-repository';
 import { MockTokenRepository } from './repositories/mock-token-repository';
 
+import { HashiCorpVaultService } from './services/hashicorp-vault-service';
 import { MockNotificationService } from './services/mock-notification-service';
 import { MockCryptoService } from './services/mock-crypto-service';
+import { MpesaPaymentService } from './services/mpesa-payment-service';
 
 // Import service factory
 import { ServiceFactory } from './factories/service-factory';
@@ -27,6 +29,8 @@ import { SignInUseCase } from '../domain/use_cases/sign-in';
 import { GetWalletInfoUseCase } from '../domain/use_cases/get-wallet-info';
 import { GetTokenBalanceUseCase } from '../domain/use_cases/get-token-balance';
 import { GetSupportedTokensUseCase } from '../domain/use_cases/get-supported-tokens';
+import { InitiateCryptoPurchaseUseCase } from '../domain/use_cases/initiate-crypto-purchase';
+import { ProcessPaymentCallbackUseCase } from '../domain/use_cases/process-payment-callback';
 import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 
@@ -34,6 +38,7 @@ import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 import { AuthController } from '../presentation/controllers/auth-controller';
 import { WalletController } from '../presentation/controllers/wallet-controller';
 import { PhoneVerificationController } from '../presentation/controllers/phone-verification-controller';
+import { PaymentController } from '../presentation/controllers/payment-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -113,30 +118,11 @@ export class Container {
       this.services.set('TokenRepository', new MockTokenRepository());
     }
 
-    // Initialize real services (these are not available yet)
-    try {
-      this.services.set('VaultService', ServiceFactory.createVaultService());
-      console.log('✅ VaultService initialized with HashiCorp Vault');
-    } catch (error) {
-      console.error('❌ Failed to initialize HashiCorp Vault service:', error instanceof Error ? error.message : 'Unknown error');
-      throw new Error('HashiCorp Vault service is required. Please ensure VAULT_URL and VAULT_TOKEN are set.');
-    }
-
-    try {
-      this.services.set('NotificationService', ServiceFactory.createNotificationService());
-      console.log('✅ NotificationService initialized with real implementation');
-    } catch (error) {
-      console.warn('⚠️  Real NotificationService not available, using mock');
-      this.services.set('NotificationService', new MockNotificationService());
-    }
-
-    try {
-      this.services.set('CryptoService', ServiceFactory.createCryptoService());
-      console.log('✅ CryptoService initialized with real implementation');
-    } catch (error) {
-      console.warn('⚠️  Real CryptoService not available, using mock');
-      this.services.set('CryptoService', new MockCryptoService());
-    }
+    // Initialize real services
+    this.services.set('VaultService', new HashiCorpVaultService());
+    this.services.set('NotificationService', new MockNotificationService());
+    this.services.set('CryptoService', new MockCryptoService());
+    this.services.set('PaymentService', new MpesaPaymentService());
   }
 
   public get<T>(serviceName: string): T {
@@ -254,6 +240,36 @@ export class Container {
     }
 
     return this.get<AuthMiddleware>('AuthMiddleware');
+  }
+
+  public getPaymentController(): PaymentController {
+    // Initialize payment use cases if not already done
+    if (!this.services.has('InitiateCryptoPurchaseUseCase')) {
+      this.services.set('InitiateCryptoPurchaseUseCase', new InitiateCryptoPurchaseUseCase(
+        this.services.get('UserRepository'),
+        this.services.get('WalletRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('PaymentService'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('ProcessPaymentCallbackUseCase')) {
+      this.services.set('ProcessPaymentCallbackUseCase', new ProcessPaymentCallbackUseCase(
+        this.services.get('WalletRepository'),
+        this.services.get('PaymentService'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('PaymentController')) {
+      this.services.set('PaymentController', new PaymentController(
+        this.services.get('InitiateCryptoPurchaseUseCase'),
+        this.services.get('ProcessPaymentCallbackUseCase')
+      ));
+    }
+
+    return this.get<PaymentController>('PaymentController');
   }
 
   public getRepositories() {

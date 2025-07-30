@@ -1,0 +1,124 @@
+### Crypto Purchase Tests
+
+# Variables
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+@currentUserId = {{login.response.body.user.id}}
+
+### 1. Login to get authentication token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "kmuhindi@proton.me",
+  "password": "TestPassword123!"
+}
+
+### 2. Initiate Crypto Purchase (BTC)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000,
+  "phoneNumber": "254700000000"
+}
+
+### 3. Initiate Crypto Purchase (ETH)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 500,
+  "phoneNumber": "254700000000"
+}
+
+### 4. Initiate Crypto Purchase (Invalid Amount - Too Low)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 5,
+  "phoneNumber": "254700000000"
+}
+
+### 5. Initiate Crypto Purchase (Invalid Amount - Too High)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 100000,
+  "phoneNumber": "254700000000"
+}
+
+### 6. Initiate Crypto Purchase (Invalid Token)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "INVALID",
+  "fiatAmount": 1000,
+  "phoneNumber": "254700000000"
+}
+
+### 7. Initiate Crypto Purchase (Missing Fields)
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000
+}
+
+### 8. Get Transaction Status
+GET {{baseUrl}}/api/payments/purchase/{{transactionId}}
+Authorization: Bearer {{authToken}}
+
+### 9. Test without authentication
+POST {{baseUrl}}/api/payments/crypto/purchase
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000,
+  "phoneNumber": "254700000000"
+}
+
+### 10. M-Pesa Callback Test (Success)
+POST {{baseUrl}}/api/payments/mpesa/callback
+Content-Type: application/json
+
+{
+  "CheckoutRequestID": "ws_CO_123456789",
+  "MerchantRequestID": "12345-67890-12345",
+  "ResultCode": "0",
+  "ResultDesc": "The service request is processed successfully.",
+  "Amount": 1025,
+  "MpesaReceiptNumber": "QK123456789",
+  "TransactionDate": "20241230123456",
+  "PhoneNumber": "254700000000"
+}
+
+### 11. M-Pesa Callback Test (Failed)
+POST {{baseUrl}}/api/payments/mpesa/callback
+Content-Type: application/json
+
+{
+  "CheckoutRequestID": "ws_CO_123456789",
+  "MerchantRequestID": "12345-67890-12345",
+  "ResultCode": "1",
+  "ResultDesc": "The balance is insufficient for the transaction.",
+  "Amount": 1025,
+  "PhoneNumber": "254700000000"
+} 

@@ -63,4 +63,62 @@ export class MockWalletRepository implements WalletRepository {
     // For mock purposes, return empty array
     return [];
   }
+
+  async createTransaction(transactionData: {
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    exchangeRate: number;
+    platformFee: number;
+    totalAmount: number;
+    phoneNumber: string;
+    status: string;
+  }): Promise<string> {
+    // In a real implementation, this would save to database
+    // For mock purposes, return a mock transaction ID
+    const transactionId = `mock-transaction-${Date.now()}`;
+    console.log('Mock: Created transaction', { transactionId, ...transactionData });
+    return transactionId;
+  }
+
+  async findTransactionByCheckoutId(checkoutRequestId: string): Promise<{
+    id: string;
+    userId: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null> {
+    // In a real implementation, this would query the database
+    // For mock purposes, return null
+    console.log('Mock: Finding transaction by checkout ID', { checkoutRequestId });
+    return null;
+  }
+
+  async updateTransactionStatus(transactionId: string, status: string): Promise<void> {
+    // In a real implementation, this would update the database
+    // For mock purposes, just log
+    console.log('Mock: Updated transaction status', { transactionId, status });
+  }
+
+  async updateTransactionPaymentDetails(transactionId: string, paymentDetails: {
+    checkoutRequestId?: string;
+    merchantRequestId?: string;
+    mpesaReceiptNumber?: string;
+    transactionDate?: string;
+    status?: string;
+  }): Promise<void> {
+    // In a real implementation, this would update the database
+    // For mock purposes, just log
+    console.log('Mock: Updated transaction payment details', { transactionId, paymentDetails });
+  }
+
+  async updateUserTokenBalance(userId: string, tokenSymbol: string, amount: number): Promise<void> {
+    // In a real implementation, this would update the database
+    // For mock purposes, just log
+    console.log('Mock: Updated user token balance', { userId, tokenSymbol, amount });
+  }
 } 

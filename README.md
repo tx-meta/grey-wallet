@@ -156,6 +156,11 @@ FROM_EMAIL=noreply@greywallet.com
 - `POST /api/phone/send-otp` - Send phone OTP
 - `POST /api/phone/verify-otp` - Verify phone OTP
 
+### Crypto Purchases
+- `POST /api/payments/crypto/purchase` - Initiate crypto purchase via M-Pesa
+- `POST /api/payments/mpesa/callback` - M-Pesa payment callback
+- `GET /api/payments/purchase/:purchaseId` - Get purchase status
+
 ### Authentication API Details
 
 #### Sign In
@@ -256,6 +261,64 @@ Content-Type: application/json
     "success": true,
     "message": "Phone number verified successfully"
   }
+}
+```
+
+### Crypto Purchase API Details
+
+#### Initiate Crypto Purchase
+```http
+POST /api/payments/crypto/purchase
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000,
+  "phoneNumber": "254700000000"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "purchaseId": "uuid",
+    "checkoutRequestId": "ws_CO_123456789",
+    "merchantRequestId": "12345-67890-12345",
+    "amount": 1025,
+    "tokenSymbol": "BTC",
+    "cryptoAmount": 0.00022222,
+    "exchangeRate": 4500000,
+    "expiresAt": "2024-01-01T00:10:00.000Z",
+    "status": "processing"
+  }
+}
+```
+
+#### M-Pesa Callback (Internal)
+```http
+POST /api/payments/mpesa/callback
+Content-Type: application/json
+
+{
+  "CheckoutRequestID": "ws_CO_123456789",
+  "MerchantRequestID": "12345-67890-12345",
+  "ResultCode": "0",
+  "ResultDesc": "The service request is processed successfully.",
+  "Amount": 1025,
+  "MpesaReceiptNumber": "QK123456789",
+  "TransactionDate": "20241230123456",
+  "PhoneNumber": "254700000000"
+}
+```
+
+**Response:**
+```json
+{
+  "ResultCode": "0",
+  "ResultDesc": "Callback processed"
 }
 ```
 
