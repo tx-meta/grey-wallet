@@ -13,7 +13,7 @@ info:
 servers:
   - url: http://localhost:3000
     description: Development server
-  - url: https://api.greywallet.com
+  - url: https://fuse.txmeta.io
     description: Production server
 
 security:
