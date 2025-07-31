@@ -1,0 +1,1041 @@
+openapi: 3.0.3
+info:
+  title: Grey Wallet API
+  description: Comprehensive cryptocurrency wallet backend service with secure wallet management, authentication, payment processing, and phone verification capabilities.
+  version: 1.0.0
+  contact:
+    name: Grey Wallet Team
+    email: support@greywallet.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.greywallet.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Check API health status
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T12:00:00.000Z"
+                  service:
+                    type: string
+                    example: "grey-wallet-api"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /api/auth/signup:
+    post:
+      summary: User Registration
+      description: Register a new user account using Supabase Auth
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - phone
+                - password
+                - firstName
+                - lastName
+                - country
+                - currency
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+                phone:
+                  type: string
+                  pattern: '^\+?[\d\s\-\(\)]+$'
+                  description: User's phone number
+                  example: "+1234567890"
+                password:
+                  type: string
+                  minLength: 8
+                  pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)'
+                  description: User's password (min 8 chars, must contain uppercase, lowercase, and number)
+                  example: "SecurePass123"
+                firstName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  description: User's first name
+                  example: "John"
+                lastName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  description: User's last name
+                  example: "Doe"
+                country:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: User's country
+                  example: "United States"
+                currency:
+                  type: string
+                  enum: [USD, EUR, GBP, KES, NGN, GHS, UGX, TZS]
+                  description: User's preferred currency
+                  example: "USD"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      addresses:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Address'
+                      requiresEmailConfirmation:
+                        type: boolean
+                        example: true
+                      message:
+                        type: string
+                        example: "User registered successfully. Please check your email to confirm your account."
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      summary: User Login
+      description: Authenticate user and get access token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  description: User's password
+                  example: "SecurePass123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      session:
+                        $ref: '#/components/schemas/Session'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/logout:
+    post:
+      summary: User Logout
+      description: Logout user and invalidate session
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh Token
+      description: Refresh access token using refresh token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      session:
+                        $ref: '#/components/schemas/Session'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/reset-password:
+    post:
+      summary: Reset Password
+      description: Request password reset email
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Password reset email sent successfully"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/me:
+    get:
+      summary: Get Current User
+      description: Get current user profile
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wallet/tokens:
+    get:
+      summary: Get Supported Tokens
+      description: Get all supported tokens (public endpoint, no authentication required)
+      tags:
+        - Wallet
+      responses:
+        '200':
+          description: Supported tokens retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      tokens:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Token'
+                      totalTokens:
+                        type: integer
+                        example: 10
+                      activeTokens:
+                        type: integer
+                        example: 8
+
+  /api/wallet:
+    get:
+      summary: Get Wallet Information
+      description: Get comprehensive wallet information for authenticated user
+      tags:
+        - Wallet
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wallet information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: "user-uuid"
+                      userEmail:
+                        type: string
+                        example: "user@example.com"
+                      totalBalance:
+                        type: string
+                        example: "1250.50"
+                      totalTokens:
+                        type: integer
+                        example: 5
+                      addresses:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WalletAddress'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wallet/overview:
+    get:
+      summary: Get Wallet Overview
+      description: Get wallet overview with summary information
+      tags:
+        - Wallet
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wallet overview retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: "user-uuid"
+                      userEmail:
+                        type: string
+                        example: "user@example.com"
+                      totalBalance:
+                        type: string
+                        example: "1250.50"
+                      totalTokens:
+                        type: integer
+                        example: 5
+                      supportedTokens:
+                        type: integer
+                        example: 10
+                      activeTokens:
+                        type: integer
+                        example: 8
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wallet/addresses:
+    get:
+      summary: Get Wallet Addresses
+      description: Get all wallet addresses for authenticated user
+      tags:
+        - Wallet
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wallet addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: "user-uuid"
+                      addresses:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WalletAddress'
+                      totalAddresses:
+                        type: integer
+                        example: 1
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wallet/balance/{tokenSymbol}:
+    get:
+      summary: Get Token Balance
+      description: Get balance for a specific token
+      tags:
+        - Wallet
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tokenSymbol
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Token symbol (e.g., BTC, ETH)
+          example: "BTC"
+      responses:
+        '200':
+          description: Token balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: "user-uuid"
+                      tokenSymbol:
+                        type: string
+                        example: "BTC"
+                      tokenName:
+                        type: string
+                        example: "Bitcoin"
+                      userBalance:
+                        type: string
+                        example: "0.5"
+                      tokenPrice:
+                        type: string
+                        example: "45000.00"
+                      fiatValue:
+                        type: string
+                        example: "22500.00"
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/crypto/purchase:
+    post:
+      summary: Initiate Crypto Purchase
+      description: Initiate crypto purchase via M-Pesa
+      tags:
+        - Payments
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tokenSymbol
+                - fiatAmount
+                - phoneNumber
+              properties:
+                tokenSymbol:
+                  type: string
+                  description: Token symbol to purchase
+                  example: "BTC"
+                fiatAmount:
+                  type: string
+                  description: Amount in fiat currency
+                  example: "1000"
+                phoneNumber:
+                  type: string
+                  description: Phone number for M-Pesa payment
+                  example: "+254712345678"
+      responses:
+        '200':
+          description: Crypto purchase initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/purchase/{purchaseId}:
+    get:
+      summary: Get Purchase Status
+      description: Get purchase status
+      tags:
+        - Payments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: purchaseId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Transaction ID
+          example: "txn-uuid"
+      responses:
+        '200':
+          description: Purchase status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseStatus'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Purchase not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/mpesa/callback:
+    post:
+      summary: M-Pesa Callback
+      description: Handle M-Pesa payment callbacks (no authentication required)
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MpesaCallback'
+      responses:
+        '200':
+          description: Callback processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ResultCode:
+                    type: string
+                    example: "0"
+                  ResultDesc:
+                    type: string
+                    example: "Callback processed"
+
+  /api/phone/send-otp:
+    post:
+      summary: Send Phone OTP
+      description: Send OTP to user's phone number
+      tags:
+        - Phone Verification
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "OTP sent successfully"
+                      expiresIn:
+                        type: integer
+                        example: 300
+                      phoneNumber:
+                        type: string
+                        example: "+254712345678"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/phone/verify-otp:
+    post:
+      summary: Verify Phone OTP
+      description: Verify OTP and mark phone as verified
+      tags:
+        - Phone Verification
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - otp
+              properties:
+                otp:
+                  type: string
+                  description: OTP code
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Phone number verified successfully"
+                      phoneNumber:
+                        type: string
+                        example: "+254712345678"
+                      verifiedAt:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        '400':
+          description: Invalid OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user-uuid"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        country:
+          type: string
+          example: "United States"
+        currency:
+          type: string
+          example: "USD"
+        phone:
+          type: string
+          example: "+1234567890"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00.000Z"
+
+    Session:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresAt:
+          type: integer
+          example: 1640995200
+
+    Address:
+      type: object
+      properties:
+        tokenSymbol:
+          type: string
+          example: "BTC"
+        address:
+          type: string
+          example: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+
+    Token:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: "BTC"
+        name:
+          type: string
+          example: "Bitcoin"
+        icon:
+          type: string
+          example: "https://example.com/btc-icon.png"
+        decimals:
+          type: integer
+          example: 8
+        isActive:
+          type: boolean
+          example: true
+        network:
+          type: string
+          example: "bitcoin"
+
+    WalletAddress:
+      type: object
+      properties:
+        tokenSymbol:
+          type: string
+          example: "BTC"
+        tokenName:
+          type: string
+          example: "Bitcoin"
+        tokenIcon:
+          type: string
+          example: "https://example.com/btc-icon.png"
+        address:
+          type: string
+          example: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+        tokenBalance:
+          type: string
+          example: "0.5"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00.000Z"
+
+    PurchaseResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          example: "txn-uuid"
+        checkoutRequestId:
+          type: string
+          example: "ws_CO_123456789"
+        merchantRequestId:
+          type: string
+          example: "29115-34600561-1"
+        amount:
+          type: string
+          example: "1000"
+        phoneNumber:
+          type: string
+          example: "+254712345678"
+        tokenSymbol:
+          type: string
+          example: "BTC"
+        status:
+          type: string
+          example: "pending"
+        message:
+          type: string
+          example: "Payment request sent to M-Pesa"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:15:00.000Z"
+
+    PurchaseStatus:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          example: "txn-uuid"
+        checkoutRequestId:
+          type: string
+          example: "ws_CO_123456789"
+        merchantRequestId:
+          type: string
+          example: "29115-34600561-1"
+        amount:
+          type: string
+          example: "1000"
+        phoneNumber:
+          type: string
+          example: "+254712345678"
+        tokenSymbol:
+          type: string
+          example: "BTC"
+        status:
+          type: string
+          example: "completed"
+        mpesaReceiptNumber:
+          type: string
+          example: "QK12345678"
+        transactionDate:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:10:00.000Z"
+        cryptoAmount:
+          type: string
+          example: "0.022"
+        fiatAmount:
+          type: string
+          example: "1000"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:10:00.000Z"
+
+    MpesaCallback:
+      type: object
+      properties:
+        CheckoutRequestID:
+          type: string
+          example: "ws_CO_123456789"
+        MerchantRequestID:
+          type: string
+          example: "29115-34600561-1"
+        ResultCode:
+          type: string
+          example: "0"
+        ResultDesc:
+          type: string
+          example: "The service request is processed successfully."
+        Amount:
+          type: string
+          example: "1000"
+        MpesaReceiptNumber:
+          type: string
+          example: "QK12345678"
+        TransactionDate:
+          type: string
+          example: "20240101121000"
+        PhoneNumber:
+          type: string
+          example: "254712345678"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation failed"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "email"
+              message:
+                type: string
+                example: "Please provide a valid email address"
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Wallet
+    description: Wallet management and token operations
+  - name: Payments
+    description: Crypto purchase and payment processing
+  - name: Phone Verification
+    description: Phone number verification via OTP 
