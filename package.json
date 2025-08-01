@@ -23,6 +23,7 @@
     "prebuild": "npm run clean",
     "vault:setup": "node scripts/setup-vault.js",
     "vault:test": "node scripts/test-vault.js",
+    "vault:populate": "node scripts/populate-vault-mnemonics.js",
     "docs:serve": "node serve-docs.js",
     "docs:open": "open http://localhost:8080/docs/"
   },
