@@ -26,11 +26,11 @@ const server = http.createServer((req, res) => {
 
   // Handle root path
   if (req.url === '/' || req.url === '/index.html') {
-    req.url = '/docs/index.html';
+    req.url = '/index.html';
   }
 
   // Determine file path
-  let filePath = path.join(__dirname, req.url);
+  let filePath = path.join(__dirname + '/docs', req.url);
   
   // Security: prevent directory traversal
   if (!filePath.startsWith(__dirname)) {
@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
       if (req.url === '/api-docs') {
         filePath = path.join(__dirname, 'API_DOCUMENTATION.md');
       } else if (req.url === '/openapi') {
-        filePath = path.join(__dirname, 'openapi.yaml');
+        filePath = path.join(__dirname, 'openapi.yml');
       } else {
         res.writeHead(404);
         res.end('File not found');
