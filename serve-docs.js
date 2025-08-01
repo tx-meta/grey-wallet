@@ -46,7 +46,9 @@ const server = http.createServer((req, res) => {
       if (req.url === '/api-docs') {
         filePath = path.join(__dirname, 'API_DOCUMENTATION.md');
       } else if (req.url === '/openapi') {
-        filePath = path.join(__dirname, 'openapi.yml');
+        filePath = path.join(__dirname + '/docs', 'openapi.yml');
+      } else if (req.url === '/swagger.html') {
+        filePath = path.join(__dirname + '/docs', 'swagger.html');
       } else {
         res.writeHead(404);
         res.end('File not found');
@@ -75,7 +77,8 @@ const server = http.createServer((req, res) => {
 server.listen(port, () => {
   console.log(`📚 API Documentation Server`);
   console.log(`🌐 Server running at http://localhost:${port}`);
-  console.log(`📖 HTML Documentation: http://localhost:${port}/docs/`);
+  console.log(`📖 ReDoc Documentation: http://localhost:${port}/`);
+  console.log(`🔧 Swagger UI Documentation: http://localhost:${port}/swagger.html`);
   console.log(`📄 Markdown Documentation: http://localhost:${port}/api-docs`);
   console.log(`🔧 OpenAPI Spec: http://localhost:${port}/openapi`);
   console.log(`\nPress Ctrl+C to stop the server`);

@@ -5,8 +5,9 @@ This directory contains comprehensive API documentation for the Grey Wallet back
 ## Documentation Files
 
 - **`../API_DOCUMENTATION.md`** - Complete API documentation in Markdown format
-- **`../openapi.yaml`** - OpenAPI/Swagger specification for machine-readable documentation
-- **`index.html`** - Interactive HTML documentation with examples
+- **`openapi.yml`** - OpenAPI/Swagger specification for machine-readable documentation
+- **`index.html`** - Interactive ReDoc documentation with examples
+- **`swagger.html`** - Interactive Swagger UI documentation (better server dropdown)
 
 ## Quick Start
 
@@ -18,15 +19,17 @@ This directory contains comprehensive API documentation for the Grey Wallet back
    ```
 
 2. Open your browser and navigate to:
-   - **HTML Documentation**: http://localhost:8080/docs/
+   - **ReDoc Documentation**: http://localhost:8080/
+   - **Swagger UI Documentation**: http://localhost:8080/swagger.html (recommended for server dropdown)
    - **Markdown Documentation**: http://localhost:8080/api-docs
    - **OpenAPI Spec**: http://localhost:8080/openapi
 
 ### Alternative: Direct File Access
 
-- **HTML Documentation**: Open `index.html` in your browser
+- **ReDoc Documentation**: Open `index.html` in your browser
+- **Swagger UI Documentation**: Open `swagger.html` in your browser (recommended for server dropdown)
 - **Markdown Documentation**: View `../API_DOCUMENTATION.md` in any Markdown viewer
-- **OpenAPI Spec**: Use `../openapi.yaml` with Swagger UI or other OpenAPI tools
+- **OpenAPI Spec**: Use `openapi.yml` with Swagger UI or other OpenAPI tools
 
 ## API Overview
 

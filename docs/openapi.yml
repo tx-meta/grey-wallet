@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Grey Wallet API
   description: Comprehensive cryptocurrency wallet backend service with secure wallet management, authentication, payment processing, and phone verification capabilities.
@@ -13,8 +13,10 @@ info:
 servers:
   - url: http://localhost:3000
     description: Development server
+    variables: {}
   - url: https://fuse.txmeta.io
     description: Production server
+    variables: {}
 
 security:
   - BearerAuth: []

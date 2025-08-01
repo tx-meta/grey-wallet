@@ -10,10 +10,63 @@
             margin: 0;
             padding: 0;
         }
+        .redoc-wrap {
+            font-family: 'Jost', sans-serif;
+        }
     </style>
 </head>
 <body>
-    <redoc spec-url='./openapi.yml'></redoc>
+    <div id="redoc-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js"></script>
+    <script>
+        Redoc.init('./openapi.yml', {
+            scrollYOffset: 0,
+            hideDownloadButton: false,
+            hideHostname: false,
+            hideInfoSection: false,
+            hideLoading: false,
+            hideSchemaPattern: false,
+            hideSingleRequestSampleTab: false,
+            expandResponses: '',
+            expandSingleSchemaField: false,
+            expandDefaultServerVariables: true,
+            expandDefaultServerVariables: true,
+            jsonSampleExpandLevel: 2,
+            menuToggle: true,
+            nativeScrollbars: false,
+            noAutoAuth: false,
+            pathInMiddlePanel: false,
+            requiredPropsFirst: false,
+            scrollYOffset: 0,
+            showExtensions: false,
+            showObjectSchemaExamples: true,
+            sortPropsAlphabetically: false,
+            suppressWarnings: false,
+            theme: {
+                colors: {
+                    primary: {
+                        main: '#667eea'
+                    }
+                },
+                typography: {
+                    fontSize: '14px',
+                    lineHeight: '1.5em',
+                    code: {
+                        fontSize: '13px',
+                        fontFamily: 'Courier, monospace',
+                        fontWeight: '400'
+                    },
+                    headings: {
+                        fontFamily: 'Jost, sans-serif',
+                        fontWeight: '600'
+                    }
+                },
+                sidebar: {
+                    backgroundColor: '#fafafa',
+                    textColor: '#333333'
+                }
+            }
+        }, document.getElementById('redoc-container'));
+    </script>
 </body>
 </html>
