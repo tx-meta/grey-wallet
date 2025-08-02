@@ -28,18 +28,22 @@ const signUpValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
   body('firstName')
+    .optional()
     .isLength({ min: 2, max: 50 })
     .trim()
     .withMessage('First name must be between 2 and 50 characters'),
   body('lastName')
+    .optional()
     .isLength({ min: 2, max: 50 })
     .trim()
     .withMessage('Last name must be between 2 and 50 characters'),
   body('country')
+    .optional()
     .isLength({ min: 2, max: 100 })
     .trim()
     .withMessage('Country must be between 2 and 100 characters'),
   body('currency')
+    .optional()
     .isIn(['USD', 'EUR', 'GBP', 'KES', 'NGN', 'GHS', 'UGX', 'TZS'])
     .withMessage('Please provide a valid currency code'),
 ];

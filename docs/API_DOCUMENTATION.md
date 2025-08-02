@@ -41,14 +41,23 @@ Register a new user account.
 }
 ```
 
+**Minimal Request Body (Optional Fields Omitted):**
+```json
+{
+  "email": "user@example.com",
+  "phone": "+1234567890",
+  "password": "SecurePass123"
+}
+```
+
 **Validation Rules:**
-- `email`: Valid email address
-- `phone`: Valid phone number format
-- `password`: Minimum 8 characters, must contain uppercase, lowercase, and number
-- `firstName`: 2-50 characters
-- `lastName`: 2-50 characters
-- `country`: 2-100 characters
-- `currency`: Must be one of: USD, EUR, GBP, KES, NGN, GHS, UGX, TZS
+- `email`: Valid email address (required)
+- `phone`: Valid phone number format (required)
+- `password`: Minimum 8 characters, must contain uppercase, lowercase, and number (required)
+- `firstName`: 2-50 characters (optional)
+- `lastName`: 2-50 characters (optional)
+- `country`: 2-100 characters (optional)
+- `currency`: Must be one of: USD, EUR, GBP, KES, NGN, GHS, UGX, TZS (optional)
 
 **Response (201):**
 ```json
@@ -62,6 +71,33 @@ Register a new user account.
       "lastName": "Doe",
       "country": "United States",
       "currency": "USD",
+      "phone": "+1234567890",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "addresses": [
+      {
+        "tokenSymbol": "BTC",
+        "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+      },
+      {
+        "tokenSymbol": "ETH",
+        "address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
+      }
+    ],
+    "requiresEmailConfirmation": true,
+    "message": "User registered successfully. Please check your email to confirm your account."
+  }
+}
+```
+
+**Minimal Response (Optional Fields Omitted):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user-uuid",
+      "email": "user@example.com",
       "phone": "+1234567890",
       "createdAt": "2024-01-01T00:00:00.000Z"
     },

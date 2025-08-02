@@ -66,10 +66,6 @@ paths:
                 - email
                 - phone
                 - password
-                - firstName
-                - lastName
-                - country
-                - currency
               properties:
                 email:
                   type: string
@@ -91,24 +87,24 @@ paths:
                   type: string
                   minLength: 2
                   maxLength: 50
-                  description: User's first name
+                  description: User's first name (optional)
                   example: "John"
                 lastName:
                   type: string
                   minLength: 2
                   maxLength: 50
-                  description: User's last name
+                  description: User's last name (optional)
                   example: "Doe"
                 country:
                   type: string
                   minLength: 2
                   maxLength: 100
-                  description: User's country
+                  description: User's country (optional)
                   example: "United States"
                 currency:
                   type: string
                   enum: [USD, EUR, GBP, KES, NGN, GHS, UGX, TZS]
-                  description: User's preferred currency
+                  description: User's preferred currency (optional)
                   example: "USD"
       responses:
         '201':

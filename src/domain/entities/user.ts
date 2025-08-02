@@ -8,10 +8,10 @@ export interface UserProps {
   email: string;
   phone: string;
   passwordHash: string;
-  country: string;
-  currency: string;
-  firstName: string;
-  lastName: string;
+  country?: string;
+  currency?: string;
+  firstName?: string;
+  lastName?: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;
@@ -44,19 +44,19 @@ export class User {
     return this.props.passwordHash;
   }
 
-  get country(): string {
+  get country(): string | undefined {
     return this.props.country;
   }
 
-  get currency(): string {
+  get currency(): string | undefined {
     return this.props.currency;
   }
 
-  get firstName(): string {
+  get firstName(): string | undefined {
     return this.props.firstName;
   }
 
-  get lastName(): string {
+  get lastName(): string | undefined {
     return this.props.lastName;
   }
 
@@ -81,7 +81,9 @@ export class User {
   }
 
   get fullName(): string {
-    return `${this.props.firstName} ${this.props.lastName}`;
+    const firstName = this.props.firstName || '';
+    const lastName = this.props.lastName || '';
+    return `${firstName} ${lastName}`.trim() || 'Unknown User';
   }
 
   // Business methods
@@ -125,9 +127,15 @@ export class User {
   private validateUser(props: UserProps): void {
     this.validateEmail(props.email);
     this.validatePhone(props.phone);
-    this.validateName(props.firstName, props.lastName);
-    this.validateCountry(props.country);
-    this.validateCurrency(props.currency);
+    if (props.firstName || props.lastName) {
+      this.validateName(props.firstName || '', props.lastName || '');
+    }
+    if (props.country) {
+      this.validateCountry(props.country);
+    }
+    if (props.currency) {
+      this.validateCurrency(props.currency);
+    }
   }
 
   private validateEmail(_email: string): void {
@@ -169,7 +177,12 @@ export class User {
   }
 
   // Factory method for creating new users
-  static create(props: Omit<UserProps, 'id' | 'isEmailVerified' | 'isPhoneVerified' | 'isActive' | 'createdAt' | 'updatedAt'>): User {
+  static create(props: Omit<UserProps, 'id' | 'isEmailVerified' | 'isPhoneVerified' | 'isActive' | 'createdAt' | 'updatedAt'> & {
+    firstName?: string;
+    lastName?: string;
+    country?: string;
+    currency?: string;
+  }): User {
     const now = new Date();
     return new User({
       ...props,

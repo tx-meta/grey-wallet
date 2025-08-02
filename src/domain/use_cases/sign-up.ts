@@ -20,20 +20,20 @@ export interface SignUpRequest {
   email: string;
   phone: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  country: string;
-  currency: string;
+  firstName?: string;
+  lastName?: string;
+  country?: string;
+  currency?: string;
 }
 
 export interface SignUpResponse {
   user: {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
-    country: string;
-    currency: string;
+    firstName?: string;
+    lastName?: string;
+    country?: string;
+    currency?: string;
     phone: string;
     createdAt: string;
   };
@@ -67,10 +67,10 @@ export class SignUpUseCase {
         email: request.email.toLowerCase().trim(),
         phone: request.phone.trim(),
         password: request.password,
-        firstName: request.firstName.trim(),
-        lastName: request.lastName.trim(),
-        country: request.country.trim(),
-        currency: request.currency.toUpperCase().trim(),
+        ...(request.firstName && { firstName: request.firstName.trim() }),
+        ...(request.lastName && { lastName: request.lastName.trim() }),
+        ...(request.country && { country: request.country.trim() }),
+        ...(request.currency && { currency: request.currency.toUpperCase().trim() }),
       };
 
       const { user: supabaseUser, error: authError, isNewUser } = await this.supabaseAuthService.signUp(signUpData);
@@ -102,10 +102,10 @@ export class SignUpUseCase {
         email: signUpData.email,
         phone: signUpData.phone,
         passwordHash: 'supabase_auth_only', // Placeholder since we don't store passwords locally
-        country: signUpData.country,
-        currency: signUpData.currency,
-        firstName: signUpData.firstName,
-        lastName: signUpData.lastName,
+        country: signUpData.country || 'Unknown',
+        currency: signUpData.currency || 'USD',
+        firstName: signUpData.firstName || 'Unknown',
+        lastName: signUpData.lastName || 'User',
       });
       
       // Override the ID and email verification status to match Supabase
@@ -140,10 +140,10 @@ export class SignUpUseCase {
         user: {
           id: supabaseUser.id,
           email: supabaseUser.email,
-          firstName: signUpData.firstName,
-          lastName: signUpData.lastName,
-          country: signUpData.country,
-          currency: signUpData.currency,
+          ...(signUpData.firstName && { firstName: signUpData.firstName }),
+          ...(signUpData.lastName && { lastName: signUpData.lastName }),
+          ...(signUpData.country && { country: signUpData.country }),
+          ...(signUpData.currency && { currency: signUpData.currency }),
           phone: signUpData.phone,
           createdAt: supabaseUser.created_at,
         },
@@ -166,14 +166,6 @@ export class SignUpUseCase {
   private validateSignUpRequest(request: SignUpRequest): void {
     if (!request.email || !request.phone || !request.password) {
       throw new Error('Email, phone, and password are required');
-    }
-
-    if (!request.firstName || !request.lastName) {
-      throw new Error('First name and last name are required');
-    }
-
-    if (!request.country || !request.currency) {
-      throw new Error('Country and currency are required');
     }
 
     if (request.password.length < 8) {

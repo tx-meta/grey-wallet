@@ -18,10 +18,10 @@ model User {
     email           String   @unique
     phone           String   @unique
     passwordHash    String
-    country         String
-    currency        String
-    firstName       String
-    lastName        String
+    country         String?
+    currency        String?
+    firstName       String?
+    lastName        String?
     isEmailVerified Boolean  @default(false)
     isPhoneVerified Boolean  @default(false)
     isActive        Boolean  @default(true)
@@ -91,21 +91,21 @@ model Transaction {
     status               String   @default("pending")
     createdAt            DateTime @default(now())
     updatedAt            DateTime @updatedAt
-    
+
     // New fields for crypto purchases
-    userId               String?
-    transactionType      String?  // ON_RAMP, OFF_RAMP, PAYMENT, TRANSFER
-    tokenSymbol          String?
-    fiatAmount           Float?
-    cryptoAmount         Float?
-    exchangeRate         Float?
-    platformFee          Float?
-    totalAmount          Float?
-    phoneNumber          String?
-    checkoutRequestId    String?
-    merchantRequestId    String?
-    mpesaReceiptNumber   String?
-    transactionDate      DateTime?
+    userId             String?
+    transactionType    String? // ON_RAMP, OFF_RAMP, PAYMENT, TRANSFER
+    tokenSymbol        String?
+    fiatAmount         Float?
+    cryptoAmount       Float?
+    exchangeRate       Float?
+    platformFee        Float?
+    totalAmount        Float?
+    phoneNumber        String?
+    checkoutRequestId  String?
+    merchantRequestId  String?
+    mpesaReceiptNumber String?
+    transactionDate    DateTime?
 
     // Relations
     supportedToken SupportedToken? @relation(fields: [tokenId], references: [tokenId])

@@ -122,7 +122,17 @@ Content-Type: {{contentType}}
   "currency": "INVALID"
 }
 
-### 8. Missing Required Fields
+### 8. Sign Up with Minimal Required Fields (No Optional Fields)
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "minimal@example.com",
+  "phone": "+1234567890",
+  "password": "TestPassword123!"
+}
+
+### 9. Missing Required Fields
 POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 

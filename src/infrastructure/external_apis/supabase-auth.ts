@@ -27,10 +27,10 @@ export interface SignUpData {
   email: string;
   phone: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  country: string;
-  currency: string;
+  firstName?: string;
+  lastName?: string;
+  country?: string;
+  currency?: string;
 }
 
 export class SupabaseAuthService {

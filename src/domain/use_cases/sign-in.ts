@@ -17,10 +17,10 @@ export interface SignInResponse {
   user: {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
-    country: string;
-    currency: string;
+    firstName?: string;
+    lastName?: string;
+    country?: string;
+    currency?: string;
     phone: string;
     isEmailVerified: boolean;
     isPhoneVerified: boolean;
@@ -114,10 +114,10 @@ export class SignInUseCase {
         user: {
           id: localUser.id,
           email: localUser.email,
-          firstName: localUser.firstName,
-          lastName: localUser.lastName,
-          country: localUser.country,
-          currency: localUser.currency,
+          ...(localUser.firstName && { firstName: localUser.firstName }),
+          ...(localUser.lastName && { lastName: localUser.lastName }),
+          ...(localUser.country && { country: localUser.country }),
+          ...(localUser.currency && { currency: localUser.currency }),
           phone: localUser.phone,
           isEmailVerified: supabaseEmailVerified, // Use Supabase's status
           isPhoneVerified: localUser.isPhoneVerified,
