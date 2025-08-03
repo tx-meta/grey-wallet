@@ -203,9 +203,30 @@ export class PrismaWalletRepository implements WalletRepository {
     transactionDate?: string;
     status?: string;
   }): Promise<void> {
+    // Convert transactionDate string to DateTime if provided
+    const updateData: any = { ...paymentDetails };
+    
+    if (paymentDetails.transactionDate) {
+      // M-Pesa transaction date format: YYYYMMDDHHMMSS (e.g., 20250803184208)
+      const dateStr = paymentDetails.transactionDate;
+      if (dateStr.length === 14) {
+        const year = parseInt(dateStr.substring(0, 4));
+        const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+        const day = parseInt(dateStr.substring(6, 8));
+        const hour = parseInt(dateStr.substring(8, 10));
+        const minute = parseInt(dateStr.substring(10, 12));
+        const second = parseInt(dateStr.substring(12, 14));
+        
+        updateData.transactionDate = new Date(year, month, day, hour, minute, second);
+      } else {
+        // If it's not in the expected format, try to parse it as ISO string
+        updateData.transactionDate = new Date(paymentDetails.transactionDate);
+      }
+    }
+    
     await prisma.transaction.update({
       where: { transactionId },
-      data: paymentDetails,
+      data: updateData,
     });
   }
 
