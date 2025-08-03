@@ -15,6 +15,9 @@ const router = Router();
 // POST /api/payments/crypto/purchase - Initiate crypto purchase (requires auth)
 router.post('/crypto/purchase', authMiddleware.authenticate, paymentController.initiateCryptoPurchase.bind(paymentController));
 
+// GET /api/payments/mpesa/callback/health - Health check for M-Pesa callback (no auth required)
+router.get('/mpesa/callback/health', paymentController.mpesaCallbackHealth.bind(paymentController));
+
 // POST /api/payments/mpesa/callback - M-Pesa callback (no auth required)
 router.post('/mpesa/callback', paymentController.handleMpesaCallback.bind(paymentController));
 
