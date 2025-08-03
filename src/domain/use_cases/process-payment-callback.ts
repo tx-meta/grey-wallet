@@ -86,7 +86,12 @@ export class ProcessPaymentCallbackUseCase {
       // 4. Get transaction details
       const transaction = await this.walletRepository.findTransactionByCheckoutId(request.checkoutRequestId);
       if (!transaction) {
-        logger.error('Transaction not found', { checkoutRequestId: request.checkoutRequestId });
+        logger.error('Transaction not found', { 
+          checkoutRequestId: request.checkoutRequestId,
+          merchantRequestId: request.merchantRequestId,
+          resultCode: request.resultCode,
+          resultDesc: request.resultDesc
+        });
         return {
           success: false,
           error: 'Transaction not found',

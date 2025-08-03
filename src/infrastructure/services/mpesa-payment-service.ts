@@ -95,13 +95,14 @@ export class MpesaPaymentService implements PaymentService {
       }
 
       const result = await response.json() as {
-        ResultDesc: any;
-        ResultCode: string;
+        ResponseDescription: any;
+        ResponseCode: string;
         CheckoutRequestID: string;
         MerchantRequestID: string;
       };
       
-      if (result.ResultCode === '0') {
+      if (result.ResponseCode === '0') {
+        
         logger.info('M-Pesa STK Push initiated successfully', { 
           checkoutRequestId: result.CheckoutRequestID,
           merchantRequestId: result.MerchantRequestID,
@@ -115,16 +116,17 @@ export class MpesaPaymentService implements PaymentService {
           merchantRequestId: result.MerchantRequestID
         };
       } else {
+        
         logger.error('M-Pesa STK Push failed', { 
-          resultCode: result.ResultCode,
-          resultDesc: result.ResultDesc,
+          resultCode: result.ResponseCode,
+          resultDesc: result.ResponseDescription,
           phoneNumber: formattedPhone,
           amount: request.amount
         });
 
         return {
           success: false,
-          error: result.ResultDesc || 'STK Push failed'
+          error: result.ResponseDescription || 'STK Push failed'
         };
       }
     } catch (error) {
