@@ -86,7 +86,12 @@ export class ProcessPaymentCallbackUseCase {
       // 4. Get transaction details
       const transaction = await this.walletRepository.findTransactionByCheckoutId(request.checkoutRequestId);
       if (!transaction) {
-        logger.error('Transaction not found', { checkoutRequestId: request.checkoutRequestId });
+        logger.error('Transaction not found', { 
+          checkoutRequestId: request.checkoutRequestId,
+          merchantRequestId: request.merchantRequestId,
+          resultCode: request.resultCode,
+          resultDesc: request.resultDesc
+        });
         return {
           success: false,
           error: 'Transaction not found',
@@ -143,13 +148,34 @@ export class ProcessPaymentCallbackUseCase {
   }
 
   private validateCallback(request: PaymentCallbackRequest): void {
+    logger.info('Validating callback request', { 
+      hasCheckoutRequestId: !!request.checkoutRequestId,
+      hasMerchantRequestId: !!request.merchantRequestId,
+      hasResultCode: !!request.resultCode,
+      checkoutRequestId: request.checkoutRequestId,
+      merchantRequestId: request.merchantRequestId,
+      resultCode: request.resultCode
+    });
+
     if (!request.checkoutRequestId || request.checkoutRequestId.trim().length === 0) {
+      logger.error('Validation failed: Checkout request ID is missing or empty', { 
+        checkoutRequestId: request.checkoutRequestId,
+        type: typeof request.checkoutRequestId
+      });
       throw new Error('Checkout request ID is required');
     }
     if (!request.merchantRequestId || request.merchantRequestId.trim().length === 0) {
+      logger.error('Validation failed: Merchant request ID is missing or empty', { 
+        merchantRequestId: request.merchantRequestId,
+        type: typeof request.merchantRequestId
+      });
       throw new Error('Merchant request ID is required');
     }
     if (!request.resultCode || request.resultCode.trim().length === 0) {
+      logger.error('Validation failed: Result code is missing or empty', { 
+        resultCode: request.resultCode,
+        type: typeof request.resultCode
+      });
       throw new Error('Result code is required');
     }
   }

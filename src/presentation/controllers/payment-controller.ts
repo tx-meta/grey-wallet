@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { InitiateCryptoPurchaseUseCase } from '../../domain/use_cases/initiate-crypto-purchase';
 import { ProcessPaymentCallbackUseCase } from '../../domain/use_cases/process-payment-callback';
 import { GetTransactionStatusUseCase } from '../../domain/use_cases/get-transaction-status';
+import { processCallbackData, detectCallbackType } from '../../shared/utils/callback-formatter';
 import logger from '../../shared/logging';
 
 export class PaymentController {
@@ -93,38 +94,69 @@ export class PaymentController {
     try {
       const callbackData = req.body;
 
-      logger.info('M-Pesa callback received', { 
-        checkoutRequestId: callbackData.CheckoutRequestID,
-        resultCode: callbackData.ResultCode,
-        resultDesc: callbackData.ResultDesc
+      // Debug logging to see the actual callback data structure
+      logger.info('M-Pesa callback received - Full data', { 
+        callbackData,
+        headers: req.headers,
+        bodyKeys: Object.keys(callbackData || {}),
+        callbackType: detectCallbackType(callbackData)
       });
 
-      const result = await this.processPaymentCallbackUseCase.execute({
-        checkoutRequestId: callbackData.CheckoutRequestID,
-        merchantRequestId: callbackData.MerchantRequestID,
-        resultCode: callbackData.ResultCode,
-        resultDesc: callbackData.ResultDesc,
-        amount: callbackData.Amount,
-        mpesaReceiptNumber: callbackData.MpesaReceiptNumber,
-        transactionDate: callbackData.TransactionDate,
-        phoneNumber: callbackData.PhoneNumber
-      });
+      // Use the callback formatter utility to process the data
+      let processedData;
+      try {
+        processedData = processCallbackData(callbackData);
+        
+        logger.info('M-Pesa callback processed successfully', { 
+          callbackType: detectCallbackType(callbackData),
+          processedData
+        });
+      } catch (error) {
+        logger.error('M-Pesa callback processing failed', { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          callbackData,
+          callbackType: detectCallbackType(callbackData)
+        });
+        
+        // Return success to M-Pesa to avoid retries, but log the issue
+        res.status(200).json({
+          ResultCode: '0',
+          ResultDesc: 'Callback received but processing failed'
+        });
+        return;
+      }
+
+      const callbackRequest = {
+        checkoutRequestId: processedData.checkoutRequestId,
+        merchantRequestId: processedData.merchantRequestId,
+        resultCode: processedData.resultCode,
+        resultDesc: processedData.resultDesc,
+        amount: processedData.amount,
+        ...(processedData.mpesaReceiptNumber && { mpesaReceiptNumber: processedData.mpesaReceiptNumber }),
+        ...(processedData.transactionDate && { transactionDate: processedData.transactionDate }),
+        ...(processedData.phoneNumber && { phoneNumber: processedData.phoneNumber })
+      };
+
+      const result = await this.processPaymentCallbackUseCase.execute(callbackRequest);
 
       if (!result.success) {
         logger.error('Payment callback processing failed', { 
           error: result.error,
-          checkoutRequestId: callbackData.CheckoutRequestID
+          checkoutRequestId: processedData.checkoutRequestId,
+          merchantRequestId: processedData.merchantRequestId,
+          resultCode: processedData.resultCode
         });
         
-        res.status(500).json({
-          success: false,
-          message: 'Failed to process callback',
+        // Return success to M-Pesa to avoid retries, but log the issue
+        res.status(200).json({
+          ResultCode: '0',
+          ResultDesc: 'Callback processed but internal error occurred'
         });
         return;
       }
 
       logger.info('Payment callback processed successfully', { 
-        checkoutRequestId: callbackData.CheckoutRequestID,
+        checkoutRequestId: processedData.checkoutRequestId,
         transactionId: result.data?.transactionId
       });
 
@@ -142,6 +174,30 @@ export class PaymentController {
       res.status(500).json({
         ResultCode: '1',
         ResultDesc: 'Internal server error'
+      });
+    }
+  }
+
+  /**
+   * GET /api/payments/mpesa/callback/health
+   * Health check for M-Pesa callback endpoint
+   */
+  async mpesaCallbackHealth(_req: Request, res: Response): Promise<void> {
+    try {
+      res.status(200).json({
+        success: true,
+        message: 'M-Pesa callback endpoint is healthy',
+        timestamp: new Date().toISOString(),
+        service: 'grey-wallet-api'
+      });
+    } catch (error) {
+      logger.error('M-Pesa callback health check error', { 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      res.status(500).json({
+        success: false,
+        message: 'M-Pesa callback endpoint health check failed'
       });
     }
   }
