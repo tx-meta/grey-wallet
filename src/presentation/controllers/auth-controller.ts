@@ -26,8 +26,6 @@ export class AuthController {
         email: req.body.email,
         phone: req.body.phone,
         password: req.body.password,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
         country: req.body.country,
         currency: req.body.currency,
       };
@@ -50,8 +48,6 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
           country: user.country,
           currency: user.currency,
           phone: user.phone,
@@ -245,8 +241,6 @@ export class AuthController {
           user: {
             id: user.id,
             email: user.email,
-            firstName: user.user_metadata?.firstName,
-            lastName: user.user_metadata?.lastName,
             country: user.user_metadata?.country,
             currency: user.user_metadata?.currency,
             phone: user.user_metadata?.phone,
@@ -298,8 +292,6 @@ export class AuthController {
           user: {
             id: user.id,
             email: user.email,
-            firstName: user.user_metadata?.firstName,
-            lastName: user.user_metadata?.lastName,
             country: user.user_metadata?.country,
             currency: user.user_metadata?.currency,
             phone: user.user_metadata?.phone,

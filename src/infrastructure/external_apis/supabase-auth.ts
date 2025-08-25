@@ -13,8 +13,6 @@ export interface SupabaseUser {
   phone?: string;
   email_confirmed_at?: string;
   user_metadata?: {
-    firstName?: string;
-    lastName?: string;
     country?: string;
     currency?: string;
     phone?: string;
@@ -27,8 +25,6 @@ export interface SignUpData {
   email: string;
   phone: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
   country?: string;
   currency?: string;
 }
@@ -60,8 +56,6 @@ export class SupabaseAuthService {
         password: data.password,
         options: {
           data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
             country: data.country,
             currency: data.currency,
             phone: data.phone,
@@ -85,8 +79,6 @@ export class SupabaseAuthService {
       }
 
       if (authData.user) {
-        // Check if this is actually a new user by looking at the creation timestamp
-        // If the user was created more than 10 seconds ago, it's likely an existing user
         const userCreatedAt = new Date(authData.user.created_at);
         const now = new Date();
         const timeDiff = now.getTime() - userCreatedAt.getTime();

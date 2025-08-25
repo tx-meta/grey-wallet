@@ -17,8 +17,6 @@ export interface SignInResponse {
   user: {
     id: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
     country?: string;
     currency?: string;
     phone: string;
@@ -114,8 +112,7 @@ export class SignInUseCase {
         user: {
           id: localUser.id,
           email: localUser.email,
-          ...(localUser.firstName && { firstName: localUser.firstName }),
-          ...(localUser.lastName && { lastName: localUser.lastName }),
+
           ...(localUser.country && { country: localUser.country }),
           ...(localUser.currency && { currency: localUser.currency }),
           phone: localUser.phone,

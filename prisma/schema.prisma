@@ -20,8 +20,6 @@ model User {
     passwordHash    String
     country         String?
     currency        String?
-    firstName       String?
-    lastName        String?
     isEmailVerified Boolean  @default(false)
     isPhoneVerified Boolean  @default(false)
     isActive        Boolean  @default(true)

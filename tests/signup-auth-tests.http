@@ -25,11 +25,11 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@proton.me",
+  "email": "parkor.k@gmail.com",
   "phone": "+254700123456",
   "password": "TestPassword123!",
-  "firstName": "Muhindi",
-  "lastName": "Briggas",
+  "firstName": "Bobbs",
+  "lastName": "Jones",
   "country": "Kenya",
   "currency": "KES"
 }

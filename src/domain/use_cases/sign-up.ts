@@ -20,8 +20,6 @@ export interface SignUpRequest {
   email: string;
   phone: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
   country?: string;
   currency?: string;
 }
@@ -30,8 +28,6 @@ export interface SignUpResponse {
   user: {
     id: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
     country?: string;
     currency?: string;
     phone: string;
@@ -67,8 +63,6 @@ export class SignUpUseCase {
         email: request.email.toLowerCase().trim(),
         phone: request.phone.trim(),
         password: request.password,
-        ...(request.firstName && { firstName: request.firstName.trim() }),
-        ...(request.lastName && { lastName: request.lastName.trim() }),
         ...(request.country && { country: request.country.trim() }),
         ...(request.currency && { currency: request.currency.toUpperCase().trim() }),
       };
@@ -104,8 +98,6 @@ export class SignUpUseCase {
         passwordHash: 'supabase_auth_only', // Placeholder since we don't store passwords locally
         country: signUpData.country || 'Unknown',
         currency: signUpData.currency || 'USD',
-        firstName: signUpData.firstName || 'Unknown',
-        lastName: signUpData.lastName || 'User',
       });
       
       // Override the ID and email verification status to match Supabase
@@ -117,9 +109,9 @@ export class SignUpUseCase {
       
       try {
         await this.userRepository.save(userWithSupabaseId);
-        console.log('✅ Local user record created successfully:', userWithSupabaseId.id);
+        console.log('Local user record created successfully:', userWithSupabaseId.id);
       } catch (error) {
-        console.error('❌ Failed to create local user record:', error);
+        console.error('Failed to create local user record:', error);
         throw error;
       }
 
@@ -140,8 +132,6 @@ export class SignUpUseCase {
         user: {
           id: supabaseUser.id,
           email: supabaseUser.email,
-          ...(signUpData.firstName && { firstName: signUpData.firstName }),
-          ...(signUpData.lastName && { lastName: signUpData.lastName }),
           ...(signUpData.country && { country: signUpData.country }),
           ...(signUpData.currency && { currency: signUpData.currency }),
           phone: signUpData.phone,
@@ -171,12 +161,6 @@ export class SignUpUseCase {
     if (request.password.length < 8) {
       throw new Error('Password must be at least 8 characters long');
     }
-
-    // Email validation temporarily deactivated - using express-validator isEmail() instead
-    // const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    // if (!emailRegex.test(request.email)) {
-    //   throw new Error('Invalid email address');
-    // }
 
     // Phone validation
     const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
@@ -243,13 +227,13 @@ export class SignUpUseCase {
   }
 
   private async sendWelcomeNotifications(supabaseUser: any, userData: SignUpData): Promise<void> {
-    const fullName = `${userData.firstName} ${userData.lastName}`;
+    const displayName = supabaseUser.email || 'User';
 
     // Send welcome email
-    await this.notificationService.sendEmailWelcome(supabaseUser.email, fullName);
+    await this.notificationService.sendEmailWelcome(supabaseUser.email, displayName);
 
     // Send welcome SMS
-    await this.notificationService.sendSMSWelcome(userData.phone, fullName);
+    await this.notificationService.sendSMSWelcome(userData.phone, displayName);
   }
 
   private async sendPhoneOTP(userId: string): Promise<void> {
