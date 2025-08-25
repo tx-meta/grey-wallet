@@ -7,6 +7,7 @@
 import { UserRepository } from '../repositories/user-repository';
 import { SupabaseAuthService } from '../../infrastructure/external_apis/supabase-auth';
 import logger from '../../shared/logging';
+import { UserErrorMessages, mapErrorToUserMessage } from '../../shared/utils/error-response';
 
 export interface SignInRequest {
   email: string;
@@ -35,6 +36,7 @@ export interface SignInResult {
   success: boolean;
   data?: SignInResponse;
   error?: string;
+  code?: string;
 }
 
 export class SignInUseCase {
@@ -58,17 +60,20 @@ export class SignInUseCase {
       );
 
       if (error) {
-        logger.warn('Sign in failed', { email: normalizedEmail, error });
+        const userMessage = mapErrorToUserMessage(error);
+        logger.warn('Sign in failed', { email: normalizedEmail, error, userMessage });
         return {
           success: false,
-          error: this.mapSupabaseError(error),
+          error: userMessage,
+          code: 'AUTH_ERROR',
         };
       }
 
       if (!supabaseUser || !session) {
         return {
           success: false,
-          error: 'Invalid credentials',
+          error: UserErrorMessages.INVALID_CREDENTIALS,
+          code: 'INVALID_CREDENTIALS',
         };
       }
 
@@ -82,7 +87,8 @@ export class SignInUseCase {
         });
         return {
           success: false,
-          error: 'User account not properly initialized',
+          error: 'User account not properly initialized. Please contact support.',
+          code: 'ACCOUNT_NOT_INITIALIZED',
         };
       }
 
@@ -90,7 +96,8 @@ export class SignInUseCase {
       if (!localUser.isActive) {
         return {
           success: false,
-          error: 'Account is deactivated. Please contact support.',
+          error: UserErrorMessages.ACCOUNT_LOCKED,
+          code: 'ACCOUNT_DEACTIVATED',
         };
       }
 
@@ -137,14 +144,19 @@ export class SignInUseCase {
         data: responseData,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const userMessage = mapErrorToUserMessage(errorMessage);
+      
       logger.error('Sign in use case error', { 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
+        userMessage,
         email: request.email 
       });
       
       return {
         success: false,
-        error: 'Internal server error',
+        error: userMessage,
+        code: 'INTERNAL_ERROR',
       };
     }
   }
@@ -169,16 +181,5 @@ export class SignInUseCase {
     }
   }
 
-  private mapSupabaseError(error: string): string {
-    // Map Supabase error messages to user-friendly messages
-    const errorMappings: Record<string, string> = {
-      'Invalid login credentials': 'Invalid email or password',
-      'Email not confirmed': 'Please verify your email address before signing in',
-      'User not found': 'Invalid email or password',
-      'Too many requests': 'Too many login attempts. Please try again later',
-      'Invalid email or password': 'Invalid email or password',
-    };
 
-    return errorMappings[error] || error;
-  }
 } 

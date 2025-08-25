@@ -15,6 +15,7 @@ import { SupabaseAuthService, SignUpData } from '../../infrastructure/external_a
 import { generateMnemonic, encryptMnemonic, decryptMnemonic } from '../../shared/utils/crypto';
 import { getDerivationStrategy } from '../derivation/DerivationRegistry';
 import logger from '../../shared/logging';
+import { UserErrorMessages, mapErrorToUserMessage } from '../../shared/utils/error-response';
 
 export interface SignUpRequest {
   email: string;
@@ -41,6 +42,7 @@ export interface SignUpResult {
   success: boolean;
   data?: SignUpResponse;
   error?: string;
+  code?: string;
 }
 
 export class SignUpUseCase {
@@ -69,25 +71,37 @@ export class SignUpUseCase {
 
       const { user: supabaseUser, error: authError, isNewUser } = await this.supabaseAuthService.signUp(signUpData);
 
-      if (authError) {
+      // Check if this is an existing user first (handled gracefully by Supabase service)
+      if (!isNewUser) {
+        logger.warn('Sign up attempted with existing email', { email: signUpData.email });
         return {
           success: false,
-          error: authError,
+          error: UserErrorMessages.EMAIL_ALREADY_EXISTS,
+          code: 'USER_EXISTS',
         };
       }
 
-      // Check if this is an existing user
-      if (!isNewUser) {
+      if (authError) {
+        const userMessage = mapErrorToUserMessage(authError);
+        logger.warn('Sign up failed with Supabase error', { 
+          error: authError, 
+          userMessage,
+          email: signUpData.email 
+        });
+        
         return {
           success: false,
-          error: 'User with this email already exists',
+          error: userMessage,
+          code: 'AUTH_ERROR',
         };
       }
 
       if (!supabaseUser) {
+        logger.error('Supabase returned no user data during sign up', { email: signUpData.email });
         return {
           success: false,
-          error: 'Failed to create user account',
+          error: UserErrorMessages.SIGNUP_FAILED,
+          code: 'USER_CREATION_FAILED',
         };
       }
 
@@ -146,9 +160,19 @@ export class SignUpUseCase {
         data: responseData,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const userMessage = mapErrorToUserMessage(errorMessage);
+      
+      logger.error('Sign up use case error', { 
+        error: errorMessage, 
+        userMessage,
+        email: request.email 
+      });
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Sign up failed',
+        error: userMessage,
+        code: 'INTERNAL_ERROR',
       };
     }
   }

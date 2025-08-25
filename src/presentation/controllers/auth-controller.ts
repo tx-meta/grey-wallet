@@ -8,6 +8,7 @@ import { SignUpUseCase, SignUpRequest } from '../../domain/use_cases/sign-up';
 import { SignInUseCase, SignInRequest } from '../../domain/use_cases/sign-in';
 import { SupabaseAuthService } from '../../infrastructure/external_apis/supabase-auth';
 import logger from '../../shared/logging';
+import { ErrorResponseBuilder, UserErrorMessages } from '../../shared/utils/error-response';
 
 export class AuthController {
   constructor(
@@ -35,10 +36,14 @@ export class AuthController {
       const result = await this.signUpUseCase.execute(signUpRequest);
 
       if (!result.success) {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-        });
+        const errorResponse = ErrorResponseBuilder.badRequest(
+          result.error || UserErrorMessages.SIGNUP_FAILED
+        );
+        
+        // Set appropriate status code based on error type
+        const statusCode = result.code === 'USER_EXISTS' ? 409 : 400;
+        
+        res.status(statusCode).json(errorResponse);
         return;
       }
 
@@ -72,10 +77,8 @@ export class AuthController {
     } catch (error) {
       logger.error('Supabase sign up error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+      const errorResponse = ErrorResponseBuilder.internalError(UserErrorMessages.SIGNUP_FAILED);
+      res.status(500).json(errorResponse);
     }
   }
 
@@ -95,10 +98,10 @@ export class AuthController {
       const result = await this.signInUseCase.execute(signInRequest);
 
       if (!result.success) {
-        res.status(401).json({
-          success: false,
-          message: result.error,
-        });
+        const errorResponse = ErrorResponseBuilder.unauthorized(
+          result.error || UserErrorMessages.INVALID_CREDENTIALS
+        );
+        res.status(401).json(errorResponse);
         return;
       }
 
@@ -116,10 +119,8 @@ export class AuthController {
     } catch (error) {
       logger.error('Sign in error', { error: error instanceof Error ? error.message : 'Unknown error' });
       
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+      const errorResponse = ErrorResponseBuilder.internalError(UserErrorMessages.LOGIN_FAILED);
+      res.status(500).json(errorResponse);
     }
   }
 
