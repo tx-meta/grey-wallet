@@ -1,0 +1,58 @@
+### Grey Wallet API - SMS Notification Tests
+### Use with VS Code REST Client extension or similar tools
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ========================================
+### SMS NOTIFICATION TESTS
+### ========================================
+
+### 1. Send Phone OTP (SMS)
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "+254726367035"
+}
+
+### 2. Send Phone OTP with Different Phone Format
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "0726367035"
+}
+
+### 3. Send Phone OTP with International Format
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "254726367035"
+}
+
+### 4. Send Phone OTP with Invalid Phone (should fail)
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "invalid-phone"
+}
+
+### 5. Send Phone OTP with Empty Phone (should fail)
+POST {{baseUrl}}/api/phone/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": ""
+}
+
+### 6. Verify Phone OTP
+POST {{baseUrl}}/api/phone/verify-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "+254726367035",
+  "otp": "123456"
+}

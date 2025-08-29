@@ -12,7 +12,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "kmuhindi@proton.me",
+  "email": "muhindi.kn@gmail.com",
   "password": "TestPassword123!"
 }
 

@@ -7,9 +7,9 @@ import { NotificationService } from '../../application/interfaces/notification-s
 import logger from '../../../shared/logging';
 
 export class MockNotificationService implements NotificationService {
-  async sendSMSOTP(phone: string, otp: string, expiresIn: number): Promise<{ success: boolean; error?: string; }> {
+  async sendSMSOTP(phone: string, otp: string, expiresIn: number): Promise<{ success: boolean; error?: string; messageId?: string }> {
     logger.info('Mock notification: OTP SMS sent', { phone, otp, expiresIn });
-    return { success: true };
+    return { success: true, messageId: `mock-${Date.now()}` };
   }
   async sendEmailWelcome(email: string, userName: string): Promise<void> {
     logger.info('Mock notification: welcome email sent', { email, userName });

@@ -25,13 +25,13 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "perui435@gmail.com",
-  "phone": "+254700123456",
+  "email": "muhindi.kn@gmail.com",
+  "phone": "+254726367035",
   "password": "TestPassword123!",
   "country": "Kenya",
   "currency": "KES",
   "agreedToTerms": true,
-  "termsVersion": "0.0.1"
+  "termsVersion": "1"
 }
 
 ### 2. Another Valid Sign Up (Different User)
@@ -233,7 +233,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@proton.me",
+  "email": "muhindi.kn@gmail.com",
   "password": "TestPassword123!"
 }
 
@@ -332,7 +332,7 @@ POST {{baseUrl}}/api/auth/verify-sms
 Content-Type: {{contentType}}
 
 {
-  "userId": "cbf52599-c2f7-4e0b-ad06-395a803c37b3",
+  "userId": "d6d15aba-230a-4026-b280-bee47fc0eb52",
   "token": "330093"
 }
 
