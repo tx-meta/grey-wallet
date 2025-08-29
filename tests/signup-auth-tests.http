@@ -25,11 +25,9 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "parkor.k@gmail.com",
+  "email": "perui435@gmail.com",
   "phone": "+254700123456",
   "password": "TestPassword123!",
-  "firstName": "Bobbs",
-  "lastName": "Jones",
   "country": "Kenya",
   "currency": "KES"
 }
@@ -59,7 +57,8 @@ Content-Type: {{contentType}}
   "firstName": "James",
   "lastName": "Peach",
   "country": "Kenya",
-  "currency": "KES"
+  "agreedToTerms": true,
+    "termsVersion": "0.0.1"  "currency": "KES"
 }
 
 ### ========================================
