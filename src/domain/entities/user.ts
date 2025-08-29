@@ -10,6 +10,8 @@ export interface UserProps {
   passwordHash: string;
   country?: string;
   currency?: string;
+  agreedToTerms: boolean;
+  termsVersion: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;
@@ -48,6 +50,14 @@ export class User {
 
   get currency(): string | undefined {
     return this.props.currency;
+  }
+
+  get agreedToTerms(): boolean {
+    return this.props.agreedToTerms;
+  }
+
+  get termsVersion(): string {
+    return this.props.termsVersion;
   }
 
   get isEmailVerified(): boolean {

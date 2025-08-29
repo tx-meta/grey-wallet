@@ -29,6 +29,8 @@ export class AuthController {
         password: req.body.password,
         country: req.body.country,
         currency: req.body.currency,
+        agreedToTerms: req.body.agreedToTerms,
+        termsVersion: req.body.termsVersion,
       };
 
       logger.info('Supabase sign up request received', { email: signUpRequest.email });

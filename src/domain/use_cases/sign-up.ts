@@ -23,6 +23,8 @@ export interface SignUpRequest {
   password: string;
   country?: string;
   currency?: string;
+  agreedToTerms: boolean;
+  termsVersion: string;
 }
 
 export interface SignUpResponse {
@@ -112,6 +114,8 @@ export class SignUpUseCase {
         passwordHash: 'supabase_auth_only', // Placeholder since we don't store passwords locally
         country: signUpData.country || 'Unknown',
         currency: signUpData.currency || 'USD',
+        agreedToTerms: request.agreedToTerms,
+        termsVersion: request.termsVersion,
       });
       
       // Override the ID and email verification status to match Supabase
@@ -190,6 +194,15 @@ export class SignUpUseCase {
     const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
     if (!phoneRegex.test(request.phone) || request.phone.length < 10) {
       throw new Error('Invalid phone number');
+    }
+
+    // Terms agreement validation
+    if (!request.agreedToTerms) {
+      throw new Error('User must agree to terms and conditions');
+    }
+
+    if (!request.termsVersion) {
+      throw new Error('Terms version is required');
     }
   }
 
