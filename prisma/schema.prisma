@@ -141,3 +141,11 @@ model AddressCounter {
     @@id([walletId])
     @@map("address_counters")
 }
+
+model TermsOfService {
+    tosVersion Int      @id @default(autoincrement()) @map("tos_version")
+    terms      String
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    @@map("terms_of_service")
+}

@@ -6,6 +6,7 @@
 import { UserRepository } from '../../domain/repositories/user-repository';
 import { WalletRepository } from '../../domain/repositories/wallet-repository';
 import { TokenRepository } from '../../domain/repositories/token-repository';
+import { TermsOfServiceRepository } from '../../domain/repositories/terms-of-service-repository';
 import { VaultService } from '../../application/interfaces/vault-service';
 import { NotificationService } from '../../application/interfaces/notification-service';
 import { CryptoService } from '../../application/interfaces/crypto-service';
@@ -14,6 +15,7 @@ import { CryptoService } from '../../application/interfaces/crypto-service';
 import { PrismaUserRepository } from '../repositories/prisma-user-repository';
 import { PrismaWalletRepository } from '../repositories/prisma-wallet-repository';
 import { PrismaTokenRepository } from '../repositories/prisma-token-repository';
+import { PrismaTermsOfServiceRepository } from '../repositories/prisma-terms-of-service-repository';
 import { HashiCorpVaultService } from '../services/hashicorp-vault-service';
 import { CelcomSMSService } from '../services/celcom-sms-service';
 
@@ -37,6 +39,13 @@ export class ServiceFactory {
    */
   static createTokenRepository(): TokenRepository {
     return new PrismaTokenRepository();
+  }
+
+  /**
+   * Creates a real TermsOfServiceRepository implementation
+   */
+  static createTermsOfServiceRepository(): TermsOfServiceRepository {
+    return new PrismaTermsOfServiceRepository();
   }
 
   /**

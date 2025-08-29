@@ -1,0 +1,29 @@
+### Grey Wallet API - Terms of Service Tests
+### Use with VS Code REST Client extension or similar tools
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ========================================
+### TERMS OF SERVICE TESTS
+### ========================================
+
+### 1. Get Latest Terms of Service
+GET {{baseUrl}}/api/terms
+Content-Type: {{contentType}}
+
+### 2. Get Terms of Service by Version 1
+GET {{baseUrl}}/api/terms/1
+Content-Type: {{contentType}}
+
+### 3. Get Terms of Service by Invalid Version (should fail)
+GET {{baseUrl}}/api/terms/999
+Content-Type: {{contentType}}
+
+### 4. Get Terms of Service by Invalid Version String (should fail)
+GET {{baseUrl}}/api/terms/invalid
+Content-Type: {{contentType}}
+
+### 5. Get Terms of Service by Negative Version (should fail)
+GET {{baseUrl}}/api/terms/-1
+Content-Type: {{contentType}}

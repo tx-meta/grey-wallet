@@ -6,6 +6,7 @@
 import { UserRepository } from '../domain/repositories/user-repository';
 import { WalletRepository } from '../domain/repositories/wallet-repository';
 import { TokenRepository } from '../domain/repositories/token-repository';
+import { TermsOfServiceRepository } from '../domain/repositories/terms-of-service-repository';
 import { VaultService } from '../application/interfaces/vault-service';
 import { NotificationService } from '../application/interfaces/notification-service';
 import { CryptoService } from '../application/interfaces/crypto-service';
@@ -14,6 +15,7 @@ import { CryptoService } from '../application/interfaces/crypto-service';
 import { MockUserRepository } from './repositories/mock-user-repository';
 import { MockWalletRepository } from './repositories/mock-wallet-repository';
 import { MockTokenRepository } from './repositories/mock-token-repository';
+import { MockTermsOfServiceRepository } from './repositories/mock-terms-of-service-repository';
 
 import { HashiCorpVaultService } from './services/hashicorp-vault-service';
 import { MockNotificationService } from './services/mock-notification-service';
@@ -34,12 +36,14 @@ import { ProcessPaymentCallbackUseCase } from '../domain/use_cases/process-payme
 import { GetTransactionStatusUseCase } from '../domain/use_cases/get-transaction-status';
 import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
+import { GetTermsOfServiceUseCase } from '../domain/use_cases/get-terms-of-service';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
 import { WalletController } from '../presentation/controllers/wallet-controller';
 import { PhoneVerificationController } from '../presentation/controllers/phone-verification-controller';
 import { PaymentController } from '../presentation/controllers/payment-controller';
+import { TermsController } from '../presentation/controllers/terms-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -78,6 +82,7 @@ export class Container {
     this.services.set('UserRepository', new MockUserRepository());
     this.services.set('WalletRepository', new MockWalletRepository());
     this.services.set('TokenRepository', new MockTokenRepository());
+    this.services.set('TermsOfServiceRepository', new MockTermsOfServiceRepository());
 
     // Initialize mock services (except VaultService - always use real HashiCorp Vault)
     this.services.set('NotificationService', new MockNotificationService());
@@ -117,6 +122,14 @@ export class Container {
     } catch (error) {
       console.warn('⚠️  Real TokenRepository not available, using mock');
       this.services.set('TokenRepository', new MockTokenRepository());
+    }
+
+    try {
+      this.services.set('TermsOfServiceRepository', ServiceFactory.createTermsOfServiceRepository());
+      console.log('✅ TermsOfServiceRepository initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real TermsOfServiceRepository not available, using mock');
+      this.services.set('TermsOfServiceRepository', new MockTermsOfServiceRepository());
     }
 
     // Initialize real services
@@ -243,6 +256,23 @@ export class Container {
     return this.get<AuthMiddleware>('AuthMiddleware');
   }
 
+  public getTermsController(): TermsController {
+    // Initialize terms use cases if not already done
+    if (!this.services.has('GetTermsOfServiceUseCase')) {
+      this.services.set('GetTermsOfServiceUseCase', new GetTermsOfServiceUseCase(
+        this.services.get('TermsOfServiceRepository')
+      ));
+    }
+
+    if (!this.services.has('TermsController')) {
+      this.services.set('TermsController', new TermsController(
+        this.services.get('GetTermsOfServiceUseCase')
+      ));
+    }
+
+    return this.get<TermsController>('TermsController');
+  }
+
   public getPaymentController(): PaymentController {
     // Initialize payment use cases if not already done
     if (!this.services.has('InitiateCryptoPurchaseUseCase')) {
@@ -285,6 +315,7 @@ export class Container {
       userRepository: this.get<UserRepository>('UserRepository'),
       walletRepository: this.get<WalletRepository>('WalletRepository'),
       tokenRepository: this.get<TokenRepository>('TokenRepository'),
+      termsOfServiceRepository: this.get<TermsOfServiceRepository>('TermsOfServiceRepository'),
     };
   }
 

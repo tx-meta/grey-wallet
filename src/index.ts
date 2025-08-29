@@ -19,6 +19,7 @@ import walletRoutes from './presentation/routes/wallet-routes';
 import userRoutes from './presentation/routes/user-routes';
 import phoneVerificationRoutes from './presentation/routes/phone-verification-routes';
 import paymentRoutes from './presentation/routes/payment-routes';
+import { createTermsRoutes } from './presentation/routes/terms-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
@@ -81,6 +82,11 @@ class App {
     this.app.use('/api/user', userRoutes);
     this.app.use('/api/phone', phoneVerificationRoutes);
     this.app.use('/api/payments', paymentRoutes);
+    
+    // Terms of service routes
+    const container = require('./infrastructure/container').container;
+    const termsRoutes = createTermsRoutes(container.getRepositories().termsOfServiceRepository);
+    this.app.use('/api/terms', termsRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {
