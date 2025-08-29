@@ -20,6 +20,7 @@ import userRoutes from './presentation/routes/user-routes';
 import phoneVerificationRoutes from './presentation/routes/phone-verification-routes';
 import paymentRoutes from './presentation/routes/payment-routes';
 import { createTermsRoutes } from './presentation/routes/terms-routes';
+import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
@@ -87,6 +88,10 @@ class App {
     const container = require('./infrastructure/container').container;
     const termsRoutes = createTermsRoutes(container.getRepositories().termsOfServiceRepository);
     this.app.use('/api/terms', termsRoutes);
+    
+    // Test SMS routes (development only)
+    const testSMSRoutes = createTestSMSRoutes();
+    this.app.use('/api/test/sms', testSMSRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {

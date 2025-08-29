@@ -1,0 +1,64 @@
+### Grey Wallet API - Test SMS Endpoints (No Authentication Required)
+### Use with VS Code REST Client extension or similar tools
+### WARNING: These endpoints are for development/testing only
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ========================================
+### TEST SMS ENDPOINTS (No Auth Required)
+### ========================================
+
+### 1. Test SMS Service Health
+GET {{baseUrl}}/api/test/sms/health
+Content-Type: {{contentType}}
+
+### 2. Test SMS Account Balance
+GET {{baseUrl}}/api/test/sms/balance
+Content-Type: {{contentType}}
+
+### 3. Test Send SMS OTP
+POST {{baseUrl}}/api/test/sms/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "+254726367035",
+  "otp": "123456",
+  "expiresIn": 300
+}
+
+### 4. Test Send SMS OTP with Different Phone Format
+POST {{baseUrl}}/api/test/sms/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "0726367035",
+  "otp": "654321",
+  "expiresIn": 600
+}
+
+### 5. Test Send Custom SMS Message
+POST {{baseUrl}}/api/test/sms/test-message
+Content-Type: {{contentType}}
+
+{
+  "phone": "+254726367035",
+  "message": "This is a test message from Grey Wallet SMS service. Sent at {{$timestamp}}"
+}
+
+### 6. Test Send SMS OTP with Invalid Phone (should fail)
+POST {{baseUrl}}/api/test/sms/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "invalid-phone",
+  "otp": "123456"
+}
+
+### 7. Test Send SMS OTP with Missing OTP (should fail)
+POST {{baseUrl}}/api/test/sms/send-otp
+Content-Type: {{contentType}}
+
+{
+  "phone": "+254726367035"
+}

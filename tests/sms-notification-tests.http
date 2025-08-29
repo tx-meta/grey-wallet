@@ -1,8 +1,48 @@
 ### Grey Wallet API - SMS Notification Tests
 ### Use with VS Code REST Client extension or similar tools
+###
+### INSTRUCTIONS:
+### 1. First run the signup test to create a test user
+### 2. Copy the JWT token from the response
+### 3. Replace YOUR_JWT_TOKEN_HERE with the actual token
+### 4. Then run the SMS tests
 
 @baseUrl = http://localhost:3000
 @contentType = application/json
+
+### Set this variable after running the signup/signin tests above
+@authToken = YOUR_JWT_TOKEN_HERE
+
+### ========================================
+### AUTHENTICATION SETUP
+### ========================================
+
+### 1. Sign Up to Get Authentication Token
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "sms-test@example.com",
+  "phone": "+254726367035",
+  "password": "TestPassword123!",
+  "country": "Kenya",
+  "currency": "KES",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
+}
+
+### 2. Sign In to Get Authentication Token (Alternative)
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "sms-test@example.com",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### SMS NOTIFICATION TESTS (Require Authentication)
+### ========================================
 
 ### ========================================
 ### SMS NOTIFICATION TESTS
@@ -11,6 +51,7 @@
 ### 1. Send Phone OTP (SMS)
 POST {{baseUrl}}/api/phone/send-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": "+254726367035"
@@ -19,6 +60,7 @@ Content-Type: {{contentType}}
 ### 2. Send Phone OTP with Different Phone Format
 POST {{baseUrl}}/api/phone/send-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": "0726367035"
@@ -27,6 +69,7 @@ Content-Type: {{contentType}}
 ### 3. Send Phone OTP with International Format
 POST {{baseUrl}}/api/phone/send-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": "254726367035"
@@ -35,14 +78,16 @@ Content-Type: {{contentType}}
 ### 4. Send Phone OTP with Invalid Phone (should fail)
 POST {{baseUrl}}/api/phone/send-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": "invalid-phone"
 }
 
-### 5. Send Phone OTP with Empty Phone (should fail)
+### 5. Send Phone OTP with Invalid Phone (should fail)
 POST {{baseUrl}}/api/phone/send-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": ""
@@ -51,6 +96,7 @@ Content-Type: {{contentType}}
 ### 6. Verify Phone OTP
 POST {{baseUrl}}/api/phone/verify-otp
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "phone": "+254726367035",
