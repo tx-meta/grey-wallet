@@ -124,14 +124,19 @@ import { seedDatabase } from './infrastructure/database/seed';
 // Start the application
 const app = new App();
 
-// Seed database on startup
+// Seed database on startup (non-blocking)
 seedDatabase()
   .then(() => {
-    app.listen();
+    logger.info('Database seeding completed, starting server...');
   })
   .catch((error) => {
-    logger.error('Failed to seed database', { error: error instanceof Error ? error.message : 'Unknown error' });
-    process.exit(1);
+    logger.error('Database seeding failed, but continuing with server startup', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  })
+  .finally(() => {
+    // Start the server regardless of seeding result
+    app.listen();
   });
 
 // Graceful shutdown
