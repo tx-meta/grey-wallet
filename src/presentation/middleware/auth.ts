@@ -14,8 +14,6 @@ declare global {
       user?: {
         id: string;
         email: string;
-        firstName?: string;
-        lastName?: string;
         country?: string;
         currency?: string;
         phone?: string;
@@ -73,8 +71,7 @@ export class AuthMiddleware {
         email: user.email,
       };
 
-      if (user.user_metadata?.firstName) userData.firstName = user.user_metadata.firstName;
-      if (user.user_metadata?.lastName) userData.lastName = user.user_metadata.lastName;
+
       if (user.user_metadata?.country) userData.country = user.user_metadata.country;
       if (user.user_metadata?.currency) userData.currency = user.user_metadata.currency;
       if (user.user_metadata?.phone) userData.phone = user.user_metadata.phone;
@@ -123,8 +120,7 @@ export class AuthMiddleware {
           email: user.email,
         };
 
-        if (user.user_metadata?.firstName) userData.firstName = user.user_metadata.firstName;
-        if (user.user_metadata?.lastName) userData.lastName = user.user_metadata.lastName;
+
         if (user.user_metadata?.country) userData.country = user.user_metadata.country;
         if (user.user_metadata?.currency) userData.currency = user.user_metadata.currency;
         if (user.user_metadata?.phone) userData.phone = user.user_metadata.phone;

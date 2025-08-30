@@ -25,13 +25,13 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@proton.me",
-  "phone": "+254700123456",
+  "email": "muhindi34.kn@gmail.com",
+  "phone": "+254726367035",
   "password": "TestPassword123!",
-  "firstName": "Muhindi",
-  "lastName": "Briggas",
   "country": "Kenya",
-  "currency": "KES"
+  "currency": "KES",
+  "agreedToTerms": true,
+  "termsVersion": "1"
 }
 
 ### 2. Another Valid Sign Up (Different User)
@@ -42,10 +42,10 @@ Content-Type: {{contentType}}
   "email": "test1@gmailer.com",
   "phone": "+254700123456",
   "password": "SecurePass456!",
-  "firstName": "Jane",
-  "lastName": "Smith",
   "country": "Kenya",
-  "currency": "KES"
+  "currency": "KES",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
 }
 
 ### 3. Sign Up with Different Currency
@@ -53,13 +53,13 @@ POST {{baseUrl}}/api/auth/signup
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@txmeta.io",
+  "email": "muhindi.kn@gmail.com",
   "phone": "+254700123456",
   "password": "KenyaPass789!",
-  "firstName": "James",
-  "lastName": "Peach",
   "country": "Kenya",
-  "currency": "KES"
+  "currency": "KES",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
 }
 
 ### ========================================
@@ -74,10 +74,10 @@ Content-Type: {{contentType}}
   "email": "invalid-email",
   "phone": "+1234567890",
   "password": "TestPassword123!",
-  "firstName": "John",
-  "lastName": "Doe",
   "country": "United States",
-  "currency": "USD"
+  "currency": "USD",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
 }
 
 ### 5. Weak Password
@@ -88,10 +88,10 @@ Content-Type: {{contentType}}
   "email": "weak@example.com",
   "phone": "+1234567890",
   "password": "123",
-  "firstName": "John",
-  "lastName": "Doe",
   "country": "United States",
-  "currency": "USD"
+  "currency": "USD",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
 }
 
 ### 6. Invalid Phone Number
@@ -100,10 +100,45 @@ Content-Type: {{contentType}}
 
 {
   "email": "invalid@example.com",
+  "phone": "123",
+  "password": "TestPassword123!",
+  "country": "United States",
+  "currency": "USD",
+  "agreedToTerms": true,
+  "termsVersion": "0.0.1"
+}
+
+### 7. Missing Terms Agreement
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "terms@example.com",
+  "phone": "+1234567890",
+  "password": "TestPassword123!",
+  "country": "United States",
+  "currency": "USD",
+  "agreedToTerms": false,
+  "termsVersion": "0.0.1"
+}
+
+### 8. Missing Terms Version
+POST {{baseUrl}}/api/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "noversion@example.com",
+  "phone": "+1234567890",
+  "password": "TestPassword123!",
+  "country": "United States",
+  "currency": "USD",
+  "agreedToTerms": true
+}
+
+{
+  "email": "invalid@example.com",
   "phone": "not-a-phone",
   "password": "TestPassword123!",
-  "firstName": "John",
-  "lastName": "Doe",
   "country": "United States",
   "currency": "USD"
 }
@@ -116,8 +151,6 @@ Content-Type: {{contentType}}
   "email": "invalid@example.com",
   "phone": "+1234567890",
   "password": "TestPassword123!",
-  "firstName": "John",
-  "lastName": "Doe",
   "country": "United States",
   "currency": "INVALID"
 }
@@ -153,8 +186,6 @@ Content-Type: {{contentType}}
   "email": "john.doe@example.com",
   "phone": "+9999999999",
   "password": "DifferentPassword123!",
-  "firstName": "Different",
-  "lastName": "User",
   "country": "United Kingdom",
   "currency": "GBP"
 }
@@ -167,8 +198,6 @@ Content-Type: {{contentType}}
   "email": "different@example.com",
   "phone": "+1234567890",
   "password": "DifferentPassword123!",
-  "firstName": "Different",
-  "lastName": "User",
   "country": "United Kingdom",
   "currency": "GBP"
 }
@@ -182,7 +211,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "kmuhindi@proton.me",
+  "email": "harunm28@gmail.com",
   "password": "TestPassword123!"
 }
 
@@ -281,7 +310,7 @@ POST {{baseUrl}}/api/auth/verify-sms
 Content-Type: {{contentType}}
 
 {
-  "userId": "cbf52599-c2f7-4e0b-ad06-395a803c37b3",
+  "userId": "d6d15aba-230a-4026-b280-bee47fc0eb52",
   "token": "330093"
 }
 
@@ -339,8 +368,6 @@ Authorization: Bearer {{jsonWebToken}}
 @testEmail = test@example.com
 @testPhone = +1234567890
 @testPassword = TestPassword123!
-@testFirstName = John
-@testLastName = Doe
 @testCountry = United States
 @testCurrency = USD
 
@@ -356,8 +383,6 @@ Content-Type: {{contentType}}
   "email": "{{testEmail}}",
   "phone": "{{testPhone}}",
   "password": "{{testPassword}}",
-  "firstName": "{{testFirstName}}",
-  "lastName": "{{testLastName}}",
   "country": "{{testCountry}}",
   "currency": "{{testCurrency}}"
 }

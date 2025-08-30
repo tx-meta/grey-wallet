@@ -27,16 +27,7 @@ const signUpValidation = [
     .withMessage('Password must be at least 8 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  body('firstName')
-    .optional()
-    .isLength({ min: 2, max: 50 })
-    .trim()
-    .withMessage('First name must be between 2 and 50 characters'),
-  body('lastName')
-    .optional()
-    .isLength({ min: 2, max: 50 })
-    .trim()
-    .withMessage('Last name must be between 2 and 50 characters'),
+
   body('country')
     .optional()
     .isLength({ min: 2, max: 100 })

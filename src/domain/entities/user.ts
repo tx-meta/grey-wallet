@@ -10,8 +10,8 @@ export interface UserProps {
   passwordHash: string;
   country?: string;
   currency?: string;
-  firstName?: string;
-  lastName?: string;
+  agreedToTerms: boolean;
+  termsVersion: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;
@@ -52,12 +52,12 @@ export class User {
     return this.props.currency;
   }
 
-  get firstName(): string | undefined {
-    return this.props.firstName;
+  get agreedToTerms(): boolean {
+    return this.props.agreedToTerms;
   }
 
-  get lastName(): string | undefined {
-    return this.props.lastName;
+  get termsVersion(): string {
+    return this.props.termsVersion;
   }
 
   get isEmailVerified(): boolean {
@@ -81,9 +81,7 @@ export class User {
   }
 
   get fullName(): string {
-    const firstName = this.props.firstName || '';
-    const lastName = this.props.lastName || '';
-    return `${firstName} ${lastName}`.trim() || 'Unknown User';
+    return this.props.email || 'Unknown User';
   }
 
   // Business methods
@@ -107,13 +105,10 @@ export class User {
     this.props.updatedAt = new Date();
   }
 
-  updateProfile(firstName: string, lastName: string, country: string, currency: string): void {
-    this.validateName(firstName, lastName);
+  updateProfile(country: string, currency: string): void {
     this.validateCountry(country);
     this.validateCurrency(currency);
 
-    this.props.firstName = firstName.trim();
-    this.props.lastName = lastName.trim();
     this.props.country = country.trim();
     this.props.currency = currency.trim();
     this.props.updatedAt = new Date();
@@ -127,9 +122,6 @@ export class User {
   private validateUser(props: UserProps): void {
     this.validateEmail(props.email);
     this.validatePhone(props.phone);
-    if (props.firstName || props.lastName) {
-      this.validateName(props.firstName || '', props.lastName || '');
-    }
     if (props.country) {
       this.validateCountry(props.country);
     }
@@ -154,14 +146,7 @@ export class User {
     }
   }
 
-  private validateName(firstName: string, lastName: string): void {
-    if (!firstName || firstName.trim().length < 2) {
-      throw new Error('First name must be at least 2 characters long');
-    }
-    if (!lastName || lastName.trim().length < 2) {
-      throw new Error('Last name must be at least 2 characters long');
-    }
-  }
+
 
   private validateCountry(country: string): void {
     if (!country || country.trim().length < 2) {
@@ -178,8 +163,6 @@ export class User {
 
   // Factory method for creating new users
   static create(props: Omit<UserProps, 'id' | 'isEmailVerified' | 'isPhoneVerified' | 'isActive' | 'createdAt' | 'updatedAt'> & {
-    firstName?: string;
-    lastName?: string;
     country?: string;
     currency?: string;
   }): User {

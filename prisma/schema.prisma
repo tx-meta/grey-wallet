@@ -20,8 +20,8 @@ model User {
     passwordHash    String
     country         String?
     currency        String?
-    firstName       String?
-    lastName        String?
+    agreedToTerms   Boolean  @default(false)
+    termsVersion    String   @default("0.0.1")
     isEmailVerified Boolean  @default(false)
     isPhoneVerified Boolean  @default(false)
     isActive        Boolean  @default(true)
@@ -140,4 +140,12 @@ model AddressCounter {
 
     @@id([walletId])
     @@map("address_counters")
+}
+
+model TermsOfService {
+    tosVersion Int      @id @default(autoincrement()) @map("tos_version")
+    terms      String
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    @@map("terms_of_service")
 }

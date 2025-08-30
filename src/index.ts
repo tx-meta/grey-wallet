@@ -19,6 +19,8 @@ import walletRoutes from './presentation/routes/wallet-routes';
 import userRoutes from './presentation/routes/user-routes';
 import phoneVerificationRoutes from './presentation/routes/phone-verification-routes';
 import paymentRoutes from './presentation/routes/payment-routes';
+import { createTermsRoutes } from './presentation/routes/terms-routes';
+import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
@@ -81,6 +83,15 @@ class App {
     this.app.use('/api/user', userRoutes);
     this.app.use('/api/phone', phoneVerificationRoutes);
     this.app.use('/api/payments', paymentRoutes);
+    
+    // Terms of service routes
+    const container = require('./infrastructure/container').container;
+    const termsRoutes = createTermsRoutes(container.getRepositories().termsOfServiceRepository);
+    this.app.use('/api/terms', termsRoutes);
+    
+    // Test SMS routes (development only)
+    const testSMSRoutes = createTestSMSRoutes();
+    this.app.use('/api/test/sms', testSMSRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {
@@ -113,14 +124,19 @@ import { seedDatabase } from './infrastructure/database/seed';
 // Start the application
 const app = new App();
 
-// Seed database on startup
+// Seed database on startup (non-blocking)
 seedDatabase()
   .then(() => {
-    app.listen();
+    logger.info('Database seeding completed, starting server...');
   })
   .catch((error) => {
-    logger.error('Failed to seed database', { error: error instanceof Error ? error.message : 'Unknown error' });
-    process.exit(1);
+    logger.error('Database seeding failed, but continuing with server startup', { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  })
+  .finally(() => {
+    // Start the server regardless of seeding result
+    app.listen();
   });
 
 // Graceful shutdown

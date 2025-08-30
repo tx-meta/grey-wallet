@@ -11,9 +11,7 @@ export class PrismaUserRepository implements UserRepository {
   async save(user: User): Promise<User> {
     console.log('🔍 PrismaUserRepository.save called with user:', {
       id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName
+      email: user.email
     });
     
     try {
@@ -25,8 +23,8 @@ export class PrismaUserRepository implements UserRepository {
           passwordHash: user.passwordHash,
           ...(user.country && { country: user.country }),
           ...(user.currency && { currency: user.currency }),
-          ...(user.firstName && { firstName: user.firstName }),
-          ...(user.lastName && { lastName: user.lastName }),
+          agreedToTerms: user.agreedToTerms,
+          termsVersion: user.termsVersion,
           isEmailVerified: user.isEmailVerified,
           isPhoneVerified: user.isPhoneVerified,
           isActive: user.isActive,
@@ -74,8 +72,8 @@ export class PrismaUserRepository implements UserRepository {
         passwordHash: user.passwordHash,
         ...(user.country && { country: user.country }),
         ...(user.currency && { currency: user.currency }),
-        ...(user.firstName && { firstName: user.firstName }),
-        ...(user.lastName && { lastName: user.lastName }),
+        agreedToTerms: user.agreedToTerms,
+        termsVersion: user.termsVersion,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
         isActive: user.isActive,
@@ -120,8 +118,8 @@ export class PrismaUserRepository implements UserRepository {
       passwordHash: prismaUser.passwordHash,
       country: prismaUser.country,
       currency: prismaUser.currency,
-      firstName: prismaUser.firstName,
-      lastName: prismaUser.lastName,
+      agreedToTerms: prismaUser.agreedToTerms,
+      termsVersion: prismaUser.termsVersion,
       isEmailVerified: prismaUser.isEmailVerified,
       isPhoneVerified: prismaUser.isPhoneVerified,
       isActive: prismaUser.isActive,
