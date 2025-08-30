@@ -151,6 +151,8 @@ export const ErrorMessageMapper = {
   'duplicate key value violates unique constraint': 'This information is already in use',
   'violates not-null constraint': 'Required information is missing',
   'unique constraint': 'This information is already in use',
+  'users_phone_key': UserErrorMessages.PHONE_ALREADY_EXISTS,
+  'users_email_key': UserErrorMessages.EMAIL_ALREADY_EXISTS,
   
   // Network errors
   'ECONNREFUSED': 'Service temporarily unavailable. Please try again.',

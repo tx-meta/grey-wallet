@@ -130,6 +130,37 @@ export class SignUpUseCase {
         console.log('Local user record created successfully:', userWithSupabaseId.id);
       } catch (error) {
         console.error('Failed to create local user record:', error);
+        
+        // Check if this is a phone number duplication error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const lowerErrorMessage = errorMessage.toLowerCase();
+        
+        if (lowerErrorMessage.includes('users_phone_key') || 
+            (lowerErrorMessage.includes('phone') && lowerErrorMessage.includes('unique constraint'))) {
+          logger.warn('Sign up attempted with existing phone number', { 
+            phone: signUpData.phone,
+            email: signUpData.email 
+          });
+          return {
+            success: false,
+            error: UserErrorMessages.PHONE_ALREADY_EXISTS,
+            code: 'USER_EXISTS',
+          };
+        }
+        
+        // Check if this is an email duplication error  
+        if (lowerErrorMessage.includes('users_email_key') ||
+            (lowerErrorMessage.includes('email') && lowerErrorMessage.includes('unique constraint'))) {
+          logger.warn('Sign up attempted with existing email in local database', { 
+            email: signUpData.email 
+          });
+          return {
+            success: false,
+            error: UserErrorMessages.EMAIL_ALREADY_EXISTS,
+            code: 'USER_EXISTS',
+          };
+        }
+        
         throw error;
       }
 
@@ -170,8 +201,12 @@ export class SignUpUseCase {
       logger.error('Sign up use case error', { 
         error: errorMessage, 
         userMessage,
-        email: request.email 
+        email: request.email,
+        fullError: error
       });
+      
+      // Log the full error details for debugging
+      console.error('Full signup error:', error);
       
       return {
         success: false,
