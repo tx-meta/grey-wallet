@@ -12,7 +12,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "muhindi.kn@gmail.com",
+  "email": "harunm28@gmail.com",
   "password": "TestPassword123!"
 }
 
@@ -27,7 +27,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "otp": "123456"
+  "otp": "903611"
 }
 
 ### 4. Try to verify with invalid OTP

@@ -22,8 +22,8 @@ POST {{baseUrl}}/api/test/sms/send-otp
 Content-Type: {{contentType}}
 
 {
-  "phone": "+254726367035",
-  "otp": "123456",
+  "phone": "+254721976609",
+  "otp": "903611",
   "expiresIn": 300
 }
 

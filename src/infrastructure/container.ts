@@ -134,7 +134,15 @@ export class Container {
 
     // Initialize real services
     this.services.set('VaultService', new HashiCorpVaultService());
-    this.services.set('NotificationService', new MockNotificationService());
+    
+    try {
+      this.services.set('NotificationService', ServiceFactory.createNotificationService());
+      console.log('✅ NotificationService initialized with Celcom SMS service');
+    } catch (error) {
+      console.warn('⚠️  Real NotificationService not available, using mock');
+      this.services.set('NotificationService', new MockNotificationService());
+    }
+    
     this.services.set('CryptoService', new MockCryptoService());
     this.services.set('PaymentService', new MpesaPaymentService());
   }
