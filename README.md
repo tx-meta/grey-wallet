@@ -114,7 +114,12 @@ Create a `.env` file based on `env.example`:
 PORT=3000
 HOST=localhost
 NODE_ENV=development
-CORS_ORIGIN=http://localhost:3000
+# CORS Configuration - Examples:
+# For development (allow all origins): CORS_ORIGIN=*
+# For single origin: CORS_ORIGIN=http://localhost:3000
+# For multiple origins: CORS_ORIGIN=http://localhost:3000,https://yourapp.com,capacitor://localhost,http://localhost
+# For mobile apps, you may need: capacitor://localhost,http://localhost,https://localhost
+CORS_ORIGIN=*
 
 # Database Configuration
 DATABASE_URL="postgresql://username:password@localhost:5432/grey_wallet?schema=public"
@@ -541,7 +546,7 @@ grey-wallet/
 - **Supabase Auth**: Secure authentication and session management
 - **Rate Limiting**: Protection against brute force attacks
 - **Input Validation**: Comprehensive request validation
-- **CORS Protection**: Cross-origin resource sharing control
+- **CORS Protection**: Cross-origin resource sharing control with mobile app support
 - **Helmet Security**: Security headers middleware
 - **Vault Integration**: Secure key storage and management
 
@@ -580,10 +585,38 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
+### CORS Configuration for Mobile Apps
+
+The application supports flexible CORS configuration to work with mobile applications:
+
+**Development Mode:**
+```env
+CORS_ORIGIN=*
+```
+This allows all origins, useful for development and testing.
+
+**Production Mode:**
+```env
+# Single origin
+CORS_ORIGIN=https://yourdomain.com
+
+# Multiple origins (comma-separated)
+CORS_ORIGIN=https://yourdomain.com,https://app.yourdomain.com,capacitor://localhost
+```
+
+**Mobile App Considerations:**
+- For Capacitor/Ionic apps: Include `capacitor://localhost`
+- For Cordova apps: Include `file://` and `http://localhost`
+- For React Native: Include your development server URL
+- For Expo: Include your Expo development URL
+
+**Supported Methods:** GET, POST, PUT, DELETE, OPTIONS, PATCH
+**Allowed Headers:** Content-Type, Authorization, X-Requested-With
+
 ### Environment Considerations
 
 - Use strong JWT secrets in production
-- Configure proper CORS origins
+- Configure proper CORS origins for your specific mobile app
 - Set up SSL/TLS certificates
 - Configure proper logging levels
 - Set up monitoring and alerting

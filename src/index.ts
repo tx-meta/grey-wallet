@@ -36,14 +36,33 @@ class App {
     this.initializeErrorHandling();
   }
 
+  private configureCorsOrigin(): string | string[] | boolean {
+    const corsOrigin = config.server.corsOrigin;
+    
+    // In development, allow all origins for mobile development
+    if (config.server.nodeEnv === 'development' && corsOrigin === '*') {
+      return true;
+    }
+    
+    // Support multiple origins separated by comma
+    if (corsOrigin.includes(',')) {
+      return corsOrigin.split(',').map(origin => origin.trim());
+    }
+    
+    // Single origin
+    return corsOrigin;
+  }
+
   private initializeMiddleware(): void {
     // Security middleware
     this.app.use(helmet());
     
     // CORS configuration
     this.app.use(cors({
-      origin: config.server.corsOrigin,
+      origin: this.configureCorsOrigin(),
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     }));
 
     // Rate limiting
