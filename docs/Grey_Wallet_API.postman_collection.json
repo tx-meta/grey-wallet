@@ -516,6 +516,89 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Crypto Quotes",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/quotes/crypto/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"quotes",
+								"crypto",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quantity to Fiat Quote",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"{{quoteTokenSymbol}}\",\n  \"quantity\": {{quoteQuantity}},\n  \"userCurrency\": \"{{quoteCurrency}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/quotes/crypto/quantity-to-fiat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"quotes",
+								"crypto",
+								"quantity-to-fiat"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fiat to Quantity Quote",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"{{quoteTokenSymbol}}\",\n  \"fiatAmount\": {{quoteFiatAmount}},\n  \"userCurrency\": \"{{quoteCurrency}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/quotes/crypto/fiat-to-quantity",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"quotes",
+								"crypto",
+								"fiat-to-quantity"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
