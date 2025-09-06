@@ -1,0 +1,175 @@
+### Crypto Quote API Tests
+### Test the crypto quotation endpoints
+
+### Variables
+@baseUrl = http://localhost:3000
+@apiUrl = {{baseUrl}}/api/quotes/crypto
+
+### Test 1: Health Check
+GET {{apiUrl}}/health
+
+###
+
+### Test 2: Get Quote for Quantity to Fiat (0.5 ETH to KES)
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "quantity": 0.5,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 3: Get Quote for Quantity to Fiat (0.001 BTC to USD)
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "quantity": 0.001,
+  "userCurrency": "USD"
+}
+
+###
+
+### Test 4: Get Quote for Fiat to Quantity (10000 KES to ETH)
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 10000,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 5: Get Quote for Fiat to Quantity (100 USD to BTC)
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 100,
+  "userCurrency": "USD"
+}
+
+###
+
+### Test 6: Get Quote for Fiat to Quantity (5000 KES to SOL)
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "SOL",
+  "fiatAmount": 5000,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 7: Error Case - Invalid Token Symbol
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "INVALID",
+  "quantity": 1,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 8: Error Case - Missing Required Fields
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH"
+}
+
+###
+
+### Test 9: Error Case - Negative Quantity
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "quantity": -1,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 10: Error Case - Zero Fiat Amount
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 0,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 11: Large Amount Test (1 BTC to KES)
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "quantity": 1,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 12: Small Amount Test (1 KES to BTC)
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 13: Different Currency Test (EUR)
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "quantity": 0.1,
+  "userCurrency": "EUR"
+}
+
+###
+
+### Test 14: Cardano (ADA) Test
+POST {{apiUrl}}/fiat-to-quantity
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ADA",
+  "fiatAmount": 1000,
+  "userCurrency": "KES"
+}
+
+###
+
+### Test 15: USDT Stablecoin Test
+POST {{apiUrl}}/quantity-to-fiat
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "quantity": 100,
+  "userCurrency": "KES"
+}
