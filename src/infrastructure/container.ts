@@ -39,6 +39,7 @@ import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 import { GetTermsOfServiceUseCase } from '../domain/use_cases/get-terms-of-service';
 import { GetCryptoQuoteUseCase } from '../domain/use_cases/get-crypto-quote';
+import { DeleteUserAccountUseCase } from '../domain/use_cases/delete-user-account';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
@@ -186,10 +187,17 @@ export class Container {
       ));
     }
 
+    if (!this.services.has('DeleteUserAccountUseCase')) {
+      this.services.set('DeleteUserAccountUseCase', new DeleteUserAccountUseCase(
+        this.services.get('UserRepository')
+      ));
+    }
+
     if (!this.services.has('AuthController')) {
       this.services.set('AuthController', new AuthController(
         this.services.get('SignUpUseCase'),
         this.services.get('SignInUseCase'),
+        this.services.get('DeleteUserAccountUseCase'),
         this.services.get('SupabaseAuthService')
       ));
     }

@@ -8,8 +8,9 @@ import { body } from 'express-validator';
 import { validateRequest } from '../middleware/validation';
 import { container } from '../../infrastructure/container';
 
-// Get auth controller from dependency injection container
+// Get auth controller and middleware from dependency injection container
 const authController = container.getAuthController();
+const authMiddleware = container.getAuthMiddleware();
 
 const router = Router();
 
@@ -62,6 +63,14 @@ const refreshTokenValidation = [
     .withMessage('Refresh token is required'),
 ];
 
+const deleteAccountValidation = [
+  body('confirmEmail')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address for confirmation'),
+];
+
 // Routes
 router.post('/signup', signUpValidation, validateRequest, authController.signUp.bind(authController));
 
@@ -74,5 +83,7 @@ router.post('/refresh', refreshTokenValidation, validateRequest, authController.
 router.post('/reset-password', resetPasswordValidation, validateRequest, authController.resetPassword.bind(authController));
 
 router.get('/me', authController.getCurrentUser.bind(authController));
+
+router.delete('/account', authMiddleware.authenticate, deleteAccountValidation, validateRequest, authController.deleteAccount.bind(authController));
 
 export default router; 
