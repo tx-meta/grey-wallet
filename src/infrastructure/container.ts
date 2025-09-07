@@ -21,6 +21,7 @@ import { HashiCorpVaultService } from './services/hashicorp-vault-service';
 import { MockNotificationService } from './services/mock-notification-service';
 import { MockCryptoService } from './services/mock-crypto-service';
 import { MpesaPaymentService } from './services/mpesa-payment-service';
+import { CryptoQuoteServiceImpl } from './services/crypto-quote-service';
 
 // Import service factory
 import { ServiceFactory } from './factories/service-factory';
@@ -37,6 +38,7 @@ import { GetTransactionStatusUseCase } from '../domain/use_cases/get-transaction
 import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 import { GetTermsOfServiceUseCase } from '../domain/use_cases/get-terms-of-service';
+import { GetCryptoQuoteUseCase } from '../domain/use_cases/get-crypto-quote';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
@@ -44,6 +46,7 @@ import { WalletController } from '../presentation/controllers/wallet-controller'
 import { PhoneVerificationController } from '../presentation/controllers/phone-verification-controller';
 import { PaymentController } from '../presentation/controllers/payment-controller';
 import { TermsController } from '../presentation/controllers/terms-controller';
+import { CryptoQuoteController } from '../presentation/controllers/crypto-quote-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -87,6 +90,7 @@ export class Container {
     // Initialize mock services (except VaultService - always use real HashiCorp Vault)
     this.services.set('NotificationService', new MockNotificationService());
     this.services.set('CryptoService', new MockCryptoService());
+    this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
     
     // Always use real HashiCorp Vault service
     try {
@@ -145,6 +149,7 @@ export class Container {
     
     this.services.set('CryptoService', new MockCryptoService());
     this.services.set('PaymentService', new MpesaPaymentService());
+    this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
   }
 
   public get<T>(serviceName: string): T {
@@ -316,6 +321,24 @@ export class Container {
     }
 
     return this.get<PaymentController>('PaymentController');
+  }
+
+  public getCryptoQuoteController(): CryptoQuoteController {
+    // Initialize crypto quote use case if not already done
+    if (!this.services.has('GetCryptoQuoteUseCase')) {
+      this.services.set('GetCryptoQuoteUseCase', new GetCryptoQuoteUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('TokenRepository')
+      ));
+    }
+
+    if (!this.services.has('CryptoQuoteController')) {
+      this.services.set('CryptoQuoteController', new CryptoQuoteController(
+        this.services.get('GetCryptoQuoteUseCase')
+      ));
+    }
+
+    return this.get<CryptoQuoteController>('CryptoQuoteController');
   }
 
   public getRepositories() {

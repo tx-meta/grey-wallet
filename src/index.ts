@@ -19,6 +19,7 @@ import walletRoutes from './presentation/routes/wallet-routes';
 import userRoutes from './presentation/routes/user-routes';
 import phoneVerificationRoutes from './presentation/routes/phone-verification-routes';
 import paymentRoutes from './presentation/routes/payment-routes';
+import cryptoQuoteRoutes from './presentation/routes/crypto-quote-routes';
 import { createTermsRoutes } from './presentation/routes/terms-routes';
 import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
 
@@ -102,6 +103,7 @@ class App {
     this.app.use('/api/user', userRoutes);
     this.app.use('/api/phone', phoneVerificationRoutes);
     this.app.use('/api/payments', paymentRoutes);
+    this.app.use('/api/quotes/crypto', cryptoQuoteRoutes);
     
     // Terms of service routes
     const container = require('./infrastructure/container').container;
