@@ -109,6 +109,7 @@ model Transaction {
 
     // Relations
     supportedToken SupportedToken? @relation(fields: [tokenId], references: [tokenId])
+    treasuryTransactions TreasuryTransaction[]
 
     @@map("transactions")
 }
@@ -148,4 +149,38 @@ model TermsOfService {
     createdAt  DateTime @default(now()) @map("created_at")
 
     @@map("terms_of_service")
+}
+
+model TreasuryAccount {
+  id              String   @id @default(uuid())
+  accountType     String   // 'CRYPTO' or 'FIAT'
+  assetSymbol     String   // 'BTC', 'ETH', 'KES', 'USD'
+  balance         Decimal  @default(0) @db.Decimal(20, 8)
+  reservedBalance Decimal  @default(0) @db.Decimal(20, 8)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  treasuryTransactions TreasuryTransaction[]
+
+  @@unique([accountType, assetSymbol])
+  @@map("treasury_accounts")
+}
+
+model TreasuryTransaction {
+  id                  String   @id @default(uuid())
+  userTransactionId   String?
+  treasuryAccountId   String
+  transactionType     String   // 'ON_RAMP', 'OFF_RAMP', 'PAYMENT'
+  amount              Decimal  @db.Decimal(20, 8)
+  balanceBefore       Decimal  @db.Decimal(20, 8)
+  balanceAfter        Decimal  @db.Decimal(20, 8)
+  description         String?
+  createdAt           DateTime @default(now())
+
+  // Relations
+  treasuryAccount TreasuryAccount @relation(fields: [treasuryAccountId], references: [id])
+  userTransaction Transaction?    @relation(fields: [userTransactionId], references: [transactionId])
+
+  @@map("treasury_transactions")
 }
