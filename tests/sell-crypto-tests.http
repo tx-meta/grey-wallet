@@ -1,0 +1,125 @@
+### Sell Crypto API Tests
+### Test file for crypto selling functionality
+
+### Variables
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.data.session.accessToken}}
+
+
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test2@example.com",
+  "password": "SecurePass123"
+}
+
+### 1. Get sell quote - quantity to fiat (user specifies how much crypto to sell)
+POST {{baseUrl}}/api/sell/crypto/quantity-to-fiat
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ADA",
+  "quantity": 1.5,
+  "userCurrency": "KES"
+}
+
+### 2. Get sell quote - fiat to quantity (user specifies how much fiat they want to receive)
+POST {{baseUrl}}/api/sell/crypto/fiat-to-quantity
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 5000,
+  "userCurrency": "KES"
+}
+
+### 3. Finalize crypto sale (using quote ID from previous requests)
+POST {{baseUrl}}/api/sell/crypto/finalize
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quoteId": "sell_1757257194789_rq7xqdfro",
+  "phoneNumber": "+254726367035"
+}
+
+### Test Cases
+
+### 4. Test insufficient balance
+POST {{baseUrl}}/api/sell/crypto/quantity-to-fiat
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "quantity": 100,
+  "userCurrency": "KES"
+}
+
+### 5. Test invalid token
+POST {{baseUrl}}/api/sell/crypto/quantity-to-fiat
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "INVALID",
+  "quantity": 0.001,
+  "userCurrency": "KES"
+}
+
+### 6. Test minimum amount validation
+POST {{baseUrl}}/api/sell/crypto/fiat-to-quantity
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 5,
+  "userCurrency": "KES"
+}
+
+### 7. Test expired quote finalization
+POST {{baseUrl}}/api/sell/crypto/finalize
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quoteId": "expired_quote_id",
+  "phoneNumber": "+254700123456"
+}
+
+### 8. Test different currencies
+POST {{baseUrl}}/api/sell/crypto/quantity-to-fiat
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "quantity": 100,
+  "userCurrency": "USD"
+}
+
+### 9. Test large amounts
+POST {{baseUrl}}/api/sell/crypto/fiat-to-quantity
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 50000,
+  "userCurrency": "KES"
+}
+
+### 10. Test invalid phone number format
+POST {{baseUrl}}/api/sell/crypto/finalize
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quoteId": "valid_quote_id",
+  "phoneNumber": "invalid_phone"
+}

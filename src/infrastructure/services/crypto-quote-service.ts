@@ -10,7 +10,12 @@ import {
   QuantityToFiatQuoteRequest,
   QuantityToFiatQuoteResponse,
   FiatToQuantityQuoteRequest,
-  FiatToQuantityQuoteResponse
+  FiatToQuantityQuoteResponse,
+  SellQuantityToFiatQuoteRequest,
+  SellQuantityToFiatQuoteResponse,
+  SellFiatToQuantityQuoteRequest,
+  SellFiatToQuantityQuoteResponse,
+  StoredQuote
 } from '../../application/interfaces/crypto-quote-service';
 import logger from '../../shared/logging';
 
@@ -36,6 +41,10 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
   private priceCache = new Map<string, { data: CryptoPrice; expiry: number }>();
   private forexCache = new Map<string, { data: ForexRate; expiry: number }>();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Quote storage for sell transactions (in-memory for now)
+  private quoteStorage = new Map<string, StoredQuote>();
+  private readonly QUOTE_DURATION = 5 * 60 * 1000; // 5 minutes quote validity
 
   // Token symbol mapping for CoinGecko
   private readonly tokenMapping: Record<string, string> = {
@@ -290,6 +299,234 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       });
       throw error;
     }
+  }
+
+  async getSellQuantityToFiatQuote(request: SellQuantityToFiatQuoteRequest, userId: string): Promise<SellQuantityToFiatQuoteResponse> {
+    try {
+      // 1. Get current crypto price in USD
+      const cryptoPrice = await this.getCryptoPrice(request.tokenSymbol);
+      
+      // 2. Calculate total USD value
+      const totalUsd = request.quantity * cryptoPrice.priceInUsd;
+      
+      // 3. Get exchange rate from USD to user currency
+      const baseForexRate = await this.getForexRate('USD', request.userCurrency);
+      
+      // 4. Apply 0.5% spread to the forex rate (less favorable for selling)
+      const exchangeRateWithSpread = this.applyForexSpread(baseForexRate.rate, false);
+      
+      // 5. Convert to user currency with spread applied
+      const totalInUserCurrency = totalUsd * exchangeRateWithSpread;
+      
+      // 6. Calculate platform fee (1% for selling)
+      const platformFee = totalInUserCurrency * 0.01;
+      const netAmountToUser = totalInUserCurrency - platformFee;
+      
+      // 7. Generate quote ID and expiry
+      const quoteId = this.generateQuoteId();
+      const estimatedAt = new Date();
+      const expiresAt = new Date(Date.now() + this.QUOTE_DURATION);
+
+      const response: SellQuantityToFiatQuoteResponse = {
+        quoteId,
+        tokenSymbol: request.tokenSymbol.toUpperCase(),
+        quantity: request.quantity,
+        pricePerTokenUsd: cryptoPrice.priceInUsd,
+        totalUsd,
+        userCurrency: request.userCurrency.toUpperCase(),
+        exchangeRate: exchangeRateWithSpread,
+        totalInUserCurrency: Math.round(totalInUserCurrency * 100) / 100,
+        platformFee: Math.round(platformFee * 100) / 100,
+        netAmountToUser: Math.round(netAmountToUser * 100) / 100,
+        estimatedAt,
+        expiresAt
+      };
+
+      // 8. Store the quote for later use
+      const storedQuote: StoredQuote = {
+        quoteId,
+        userId,
+        quoteType: 'sell-quantity-to-fiat',
+        tokenSymbol: request.tokenSymbol.toUpperCase(),
+        quantity: request.quantity,
+        fiatAmount: netAmountToUser,
+        userCurrency: request.userCurrency.toUpperCase(),
+        exchangeRate: exchangeRateWithSpread,
+        pricePerTokenUsd: cryptoPrice.priceInUsd,
+        platformFee,
+        netAmountToUser,
+        estimatedAt,
+        expiresAt
+      };
+      
+      await this.storeQuote(storedQuote);
+
+      logger.info('Sell quantity-to-fiat quote generated', {
+        quoteId,
+        userId,
+        tokenSymbol: request.tokenSymbol,
+        quantity: request.quantity,
+        netAmountToUser,
+        userCurrency: request.userCurrency
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Failed to generate sell quantity-to-fiat quote', {
+        request,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
+  async getSellFiatToQuantityQuote(request: SellFiatToQuantityQuoteRequest, userId: string): Promise<SellFiatToQuantityQuoteResponse> {
+    try {
+      // 1. Get exchange rate from USD to user currency
+      const baseForexRate = await this.getForexRate('USD', request.userCurrency);
+      
+      // 2. Apply 0.5% spread to the forex rate (less favorable for selling)
+      const exchangeRateWithSpread = this.applyForexSpread(baseForexRate.rate, false);
+      
+      // 3. Calculate platform fee (1% for selling) - user wants to receive fiatAmount after fees
+      const platformFeeRate = 0.01;
+      const totalBeforeFee = request.fiatAmount / (1 - platformFeeRate);
+      const platformFee = totalBeforeFee - request.fiatAmount;
+      
+      // 4. Convert total (including fee) to USD
+      const fiatAmountUsd = totalBeforeFee / exchangeRateWithSpread;
+      
+      // 5. Get current crypto price in USD
+      const cryptoPrice = await this.getCryptoPrice(request.tokenSymbol);
+      
+      // 6. Calculate quantity user needs to sell
+      const quantity = fiatAmountUsd / cryptoPrice.priceInUsd;
+      
+      // 7. Generate quote ID and expiry
+      const quoteId = this.generateQuoteId();
+      const estimatedAt = new Date();
+      const expiresAt = new Date(Date.now() + this.QUOTE_DURATION);
+
+      const response: SellFiatToQuantityQuoteResponse = {
+        quoteId,
+        tokenSymbol: request.tokenSymbol.toUpperCase(),
+        fiatAmount: request.fiatAmount,
+        userCurrency: request.userCurrency.toUpperCase(),
+        exchangeRate: exchangeRateWithSpread,
+        fiatAmountUsd: Math.round(fiatAmountUsd * 100) / 100,
+        pricePerTokenUsd: cryptoPrice.priceInUsd,
+        quantity: Math.round(quantity * 100000000) / 100000000, // Round to 8 decimal places
+        platformFee: Math.round(platformFee * 100) / 100,
+        totalQuantityToSell: Math.round(quantity * 100000000) / 100000000,
+        estimatedAt,
+        expiresAt
+      };
+
+      // 8. Store the quote for later use
+      const storedQuote: StoredQuote = {
+        quoteId,
+        userId,
+        quoteType: 'sell-fiat-to-quantity',
+        tokenSymbol: request.tokenSymbol.toUpperCase(),
+        quantity,
+        fiatAmount: request.fiatAmount,
+        userCurrency: request.userCurrency.toUpperCase(),
+        exchangeRate: exchangeRateWithSpread,
+        pricePerTokenUsd: cryptoPrice.priceInUsd,
+        platformFee,
+        netAmountToUser: request.fiatAmount,
+        estimatedAt,
+        expiresAt
+      };
+      
+      await this.storeQuote(storedQuote);
+
+      logger.info('Sell fiat-to-quantity quote generated', {
+        quoteId,
+        userId,
+        tokenSymbol: request.tokenSymbol,
+        fiatAmount: request.fiatAmount,
+        quantity,
+        userCurrency: request.userCurrency
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Failed to generate sell fiat-to-quantity quote', {
+        request,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
+  async storeQuote(quote: StoredQuote): Promise<void> {
+    this.quoteStorage.set(quote.quoteId, quote);
+    
+    logger.debug('Quote stored', {
+      quoteId: quote.quoteId,
+      userId: quote.userId,
+      expiresAt: quote.expiresAt
+    });
+  }
+
+  async getStoredQuote(quoteId: string, userId: string): Promise<StoredQuote | null> {
+    const quote = this.quoteStorage.get(quoteId);
+    
+    if (!quote) {
+      return null;
+    }
+    
+    // Check if quote belongs to the user
+    if (quote.userId !== userId) {
+      logger.warn('Quote access attempt by different user', {
+        quoteId,
+        requestedBy: userId,
+        ownedBy: quote.userId
+      });
+      return null;
+    }
+    
+    // Check if quote has expired
+    if (Date.now() > quote.expiresAt.getTime()) {
+      logger.info('Quote expired', {
+        quoteId,
+        userId,
+        expiresAt: quote.expiresAt
+      });
+      this.quoteStorage.delete(quoteId);
+      return null;
+    }
+    
+    return quote;
+  }
+
+  async cleanupExpiredQuotes(): Promise<void> {
+    const now = Date.now();
+    const expiredQuotes: string[] = [];
+    
+    for (const [quoteId, quote] of this.quoteStorage.entries()) {
+      if (now > quote.expiresAt.getTime()) {
+        expiredQuotes.push(quoteId);
+      }
+    }
+    
+    for (const quoteId of expiredQuotes) {
+      this.quoteStorage.delete(quoteId);
+    }
+    
+    if (expiredQuotes.length > 0) {
+      logger.info('Cleaned up expired quotes', {
+        count: expiredQuotes.length,
+        quoteIds: expiredQuotes
+      });
+    }
+  }
+
+  private generateQuoteId(): string {
+    return `sell_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   async isHealthy(): Promise<boolean> {
