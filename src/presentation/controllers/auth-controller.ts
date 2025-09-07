@@ -6,6 +6,7 @@
 import { Request, Response } from 'express';
 import { SignUpUseCase, SignUpRequest } from '../../domain/use_cases/sign-up';
 import { SignInUseCase, SignInRequest } from '../../domain/use_cases/sign-in';
+import { DeleteUserAccountUseCase, DeleteUserAccountRequest } from '../../domain/use_cases/delete-user-account';
 import { SupabaseAuthService } from '../../infrastructure/external_apis/supabase-auth';
 import logger from '../../shared/logging';
 import { ErrorResponseBuilder, UserErrorMessages } from '../../shared/utils/error-response';
@@ -14,6 +15,7 @@ export class AuthController {
   constructor(
     private signUpUseCase: SignUpUseCase,
     private signInUseCase: SignInUseCase,
+    private deleteUserAccountUseCase: DeleteUserAccountUseCase,
     private supabaseAuthService: SupabaseAuthService
   ) {}
 
@@ -304,6 +306,76 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Get current user error', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * DELETE /api/auth/account
+   * Delete current user account (requires authentication)
+   */
+  async deleteAccount(req: Request, res: Response): Promise<void> {
+    try {
+      // Get the authenticated user ID from the request
+      // This should be set by the auth middleware
+      const userId = (req as any).user?.id;
+      
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+        return;
+      }
+
+      // Optional email confirmation for extra security
+      const confirmEmail = req.body.confirmEmail;
+
+      const deleteRequest: DeleteUserAccountRequest = {
+        userId,
+        confirmEmail
+      };
+
+      logger.info('Delete account request received', { 
+        userId,
+        hasEmailConfirmation: !!confirmEmail 
+      });
+
+      const result = await this.deleteUserAccountUseCase.execute(deleteRequest);
+
+      if (!result.success) {
+        const statusCode = result.error === 'Email confirmation does not match account email' ? 400 : 500;
+        res.status(statusCode).json({
+          success: false,
+          message: result.error,
+        });
+        return;
+      }
+
+      // Log out the user from Supabase as well
+      try {
+        await this.supabaseAuthService.signOut();
+      } catch (signOutError) {
+        // Continue even if sign out fails
+        logger.warn('Failed to sign out user from Supabase after account deletion', {
+          userId,
+          error: signOutError instanceof Error ? signOutError.message : 'Unknown error'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+
+    } catch (error) {
+      logger.error('Delete account error', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
       
       res.status(500).json({
         success: false,
