@@ -27,10 +27,8 @@ export interface QuantityToFiatQuoteResponse {
   quantity: number;
   pricePerTokenUsd: number;
   totalUsd: number;
-  platformFeeUsd: number;
-  totalWithFeeUsd: number;
   userCurrency: string;
-  exchangeRate: number; // USD to user currency
+  exchangeRate: number; // USD to user currency (with 0.5% spread applied)
   totalInUserCurrency: number;
   estimatedAt: Date;
 }
@@ -45,11 +43,9 @@ export interface FiatToQuantityQuoteResponse {
   tokenSymbol: string;
   fiatAmount: number;
   userCurrency: string;
-  exchangeRate: number; // USD to user currency
+  exchangeRate: number; // User currency to USD (with 0.5% spread applied)
   fiatAmountUsd: number;
   pricePerTokenUsd: number;
-  platformFeeUsd: number;
-  availableForPurchaseUsd: number; // fiatAmountUsd - platformFeeUsd
   quantity: number;
   estimatedAt: Date;
 }
@@ -61,8 +57,8 @@ export interface CryptoQuoteService {
   // Get forex exchange rate
   getForexRate(fromCurrency: string, toCurrency: string): Promise<ForexRate>;
   
-  // Calculate platform fee in USD
-  calculatePlatformFee(amountUsd: number): number;
+  // Apply spread to forex rate (0.5% spread for our profit margin)
+  applyForexSpread(rate: number, isUserCurrencyToUsd: boolean): number;
   
   // Quote: User specifies quantity, get fiat cost
   getQuantityToFiatQuote(request: QuantityToFiatQuoteRequest): Promise<QuantityToFiatQuoteResponse>;

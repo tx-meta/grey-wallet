@@ -188,7 +188,7 @@ export class CryptoQuoteController {
    * GET /api/quotes/crypto/health
    * Health check for crypto quote service
    */
-  async healthCheck(req: Request, res: Response): Promise<void> {
+  async healthCheck(_req: Request, res: Response): Promise<void> {
     try {
       // We could check the service health here if needed
       res.status(200).json({

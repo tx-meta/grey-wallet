@@ -59,11 +59,9 @@ Get the fiat cost for a specific crypto quantity.
     "quantity": 0.5,
     "pricePerTokenUsd": 2500.00,
     "totalUsd": 1250.00,
-    "platformFeeUsd": 25.00,
-    "totalWithFeeUsd": 1275.00,
     "userCurrency": "KES",
-    "exchangeRate": 130.50,
-    "totalInUserCurrency": 166387.50,
+    "exchangeRate": 131.15,
+    "totalInUserCurrency": 163937.50,
     "estimatedAt": "2024-01-15T10:30:00Z"
   }
 }
@@ -91,12 +89,10 @@ Get the crypto quantity for a specific fiat amount.
     "tokenSymbol": "ETH",
     "fiatAmount": 10000,
     "userCurrency": "KES",
-    "exchangeRate": 0.00766,
-    "fiatAmountUsd": 76.60,
+    "exchangeRate": 0.007622,
+    "fiatAmountUsd": 76.22,
     "pricePerTokenUsd": 2500.00,
-    "platformFeeUsd": 1.53,
-    "availableForPurchaseUsd": 75.07,
-    "quantity": 0.03002800,
+    "quantity": 0.03048800,
     "estimatedAt": "2024-01-15T10:30:00Z"
   }
 }
@@ -130,11 +126,13 @@ Check if the crypto quote service is healthy.
 - **Rate Limits**: 1,500 requests/month on free tier
 - **Caching**: 5-minute cache to reduce API calls
 
-## Platform Fee Structure
+## Profit Margin Structure
 
-- **Fee Rate**: 2% of transaction amount
-- **Minimum Fee**: $1 USD
-- **Calculation**: `Math.max(amountUsd * 0.02, 1)`
+- **Forex Spread**: 0.5% spread applied to forex rates
+- **No Transaction Fees**: No explicit fees charged to users
+- **Spread Application**:
+  - For quantity-to-fiat: Forex rate increased by 0.5% (user pays more in local currency)
+  - For fiat-to-quantity: Forex rate decreased by 0.5% (user gets less USD equivalent)
 
 ## Error Handling
 

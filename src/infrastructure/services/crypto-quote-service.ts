@@ -187,13 +187,19 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
     }
   }
 
-  calculatePlatformFee(amountUsd: number): number {
-    // Platform fee: 2% with minimum of $1 USD
-    const feePercentage = 0.02; // 2%
-    const minimumFee = 1; // $1 USD
+  applyForexSpread(rate: number, isUserCurrencyToUsd: boolean): number {
+    // Apply 0.5% spread to forex rate for profit margin
+    const spreadPercentage = 0.005; // 0.5%
     
-    const calculatedFee = amountUsd * feePercentage;
-    return Math.max(calculatedFee, minimumFee);
+    if (isUserCurrencyToUsd) {
+      // When converting user currency to USD, we apply spread to get less USD for user
+      // This means we multiply by (1 - spread) to get a lower rate
+      return rate * (1 - spreadPercentage);
+    } else {
+      // When converting USD to user currency, we apply spread to get more user currency cost
+      // This means we multiply by (1 + spread) to get a higher rate
+      return rate * (1 + spreadPercentage);
+    }
   }
 
   async getQuantityToFiatQuote(request: QuantityToFiatQuoteRequest): Promise<QuantityToFiatQuoteResponse> {
@@ -201,28 +207,25 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       // 1. Get current crypto price in USD
       const cryptoPrice = await this.getCryptoPrice(request.tokenSymbol);
       
-      // 2. Calculate total USD before fees
+      // 2. Calculate total USD value
       const totalUsd = request.quantity * cryptoPrice.priceInUsd;
       
-      // 3. Calculate platform fee
-      const platformFeeUsd = this.calculatePlatformFee(totalUsd);
-      const totalWithFeeUsd = totalUsd + platformFeeUsd;
+      // 3. Get exchange rate from USD to user currency
+      const baseForexRate = await this.getForexRate('USD', request.userCurrency);
       
-      // 4. Get exchange rate from USD to user currency
-      const forexRate = await this.getForexRate('USD', request.userCurrency);
+      // 4. Apply 0.5% spread to the forex rate (favorable to us)
+      const exchangeRateWithSpread = this.applyForexSpread(baseForexRate.rate, false);
       
-      // 5. Convert to user currency
-      const totalInUserCurrency = totalWithFeeUsd * forexRate.rate;
+      // 5. Convert to user currency with spread applied
+      const totalInUserCurrency = totalUsd * exchangeRateWithSpread;
 
       const response: QuantityToFiatQuoteResponse = {
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         quantity: request.quantity,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         totalUsd,
-        platformFeeUsd,
-        totalWithFeeUsd,
         userCurrency: request.userCurrency.toUpperCase(),
-        exchangeRate: forexRate.rate,
+        exchangeRate: exchangeRateWithSpread,
         totalInUserCurrency: Math.round(totalInUserCurrency * 100) / 100, // Round to 2 decimal places
         estimatedAt: new Date()
       };
@@ -247,36 +250,27 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
   async getFiatToQuantityQuote(request: FiatToQuantityQuoteRequest): Promise<FiatToQuantityQuoteResponse> {
     try {
       // 1. Get exchange rate from user currency to USD
-      const forexRate = await this.getForexRate(request.userCurrency, 'USD');
+      const baseForexRate = await this.getForexRate(request.userCurrency, 'USD');
       
-      // 2. Convert fiat amount to USD
-      const fiatAmountUsd = request.fiatAmount * forexRate.rate;
+      // 2. Apply 0.5% spread to the forex rate (favorable to us - user gets less USD)
+      const exchangeRateWithSpread = this.applyForexSpread(baseForexRate.rate, true);
       
-      // 3. Calculate platform fee in USD
-      const platformFeeUsd = this.calculatePlatformFee(fiatAmountUsd);
+      // 3. Convert fiat amount to USD with spread applied
+      const fiatAmountUsd = request.fiatAmount * exchangeRateWithSpread;
       
-      // 4. Calculate available amount for purchase (after fee)
-      const availableForPurchaseUsd = fiatAmountUsd - platformFeeUsd;
-      
-      if (availableForPurchaseUsd <= 0) {
-        throw new Error('Amount too small - would be entirely consumed by platform fee');
-      }
-      
-      // 5. Get current crypto price in USD
+      // 4. Get current crypto price in USD
       const cryptoPrice = await this.getCryptoPrice(request.tokenSymbol);
       
-      // 6. Calculate quantity user will receive
-      const quantity = availableForPurchaseUsd / cryptoPrice.priceInUsd;
+      // 5. Calculate quantity user will receive (all of the USD amount goes to crypto)
+      const quantity = fiatAmountUsd / cryptoPrice.priceInUsd;
 
       const response: FiatToQuantityQuoteResponse = {
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         fiatAmount: request.fiatAmount,
         userCurrency: request.userCurrency.toUpperCase(),
-        exchangeRate: forexRate.rate,
+        exchangeRate: exchangeRateWithSpread,
         fiatAmountUsd: Math.round(fiatAmountUsd * 100) / 100,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
-        platformFeeUsd: Math.round(platformFeeUsd * 100) / 100,
-        availableForPurchaseUsd: Math.round(availableForPurchaseUsd * 100) / 100,
         quantity: Math.round(quantity * 100000000) / 100000000, // Round to 8 decimal places
         estimatedAt: new Date()
       };

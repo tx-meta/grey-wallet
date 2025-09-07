@@ -3,7 +3,7 @@
  * Handles crypto price quotation requests
  */
 
-import { CryptoQuoteService, QuantityToFiatQuoteRequest, QuantityToFiatQuoteResponse, FiatToQuantityQuoteRequest, FiatToQuantityQuoteResponse } from '../../application/interfaces/crypto-quote-service';
+import { CryptoQuoteService, QuantityToFiatQuoteResponse, FiatToQuantityQuoteResponse } from '../../application/interfaces/crypto-quote-service';
 import { TokenRepository } from '../repositories/token-repository';
 import logger from '../../shared/logging';
 
