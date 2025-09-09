@@ -30,6 +30,7 @@ export interface QuantityToFiatQuoteResponse {
   userCurrency: string;
   exchangeRate: number; // USD to user currency (with 0.5% spread applied)
   totalInUserCurrency: number;
+  platformFee: number;
   estimatedAt: Date;
 }
 
@@ -47,6 +48,7 @@ export interface FiatToQuantityQuoteResponse {
   fiatAmountUsd: number;
   pricePerTokenUsd: number;
   quantity: number;
+  platformFee: number;
   estimatedAt: Date;
 }
 
@@ -96,7 +98,6 @@ export interface SellFiatToQuantityQuoteResponse {
 export interface StoredQuote {
   quoteId: string;
   userId: string;
-  quoteType: 'sell-quantity-to-fiat' | 'sell-fiat-to-quantity';
   tokenSymbol: string;
   quantity: number;
   fiatAmount: number;
@@ -104,7 +105,6 @@ export interface StoredQuote {
   exchangeRate: number;
   pricePerTokenUsd: number;
   platformFee: number;
-  netAmountToUser: number;
   estimatedAt: Date;
   expiresAt: Date;
 }
@@ -130,6 +130,12 @@ export interface CryptoQuoteService {
   
   // SELL Quote: User specifies fiat amount they want, get crypto quantity needed
   getSellFiatToQuantityQuote(request: SellFiatToQuantityQuoteRequest, userId: string): Promise<SellFiatToQuantityQuoteResponse>;
+  
+  // BUY Quote: User specifies quantity, get fiat cost (with storage)
+  getBuyQuantityToFiatQuote(request: QuantityToFiatQuoteRequest, userId: string): Promise<QuantityToFiatQuoteResponse>;
+  
+  // BUY Quote: User specifies fiat amount, get crypto quantity (with storage)
+  getBuyFiatToQuantityQuote(request: FiatToQuantityQuoteRequest, userId: string): Promise<FiatToQuantityQuoteResponse>;
   
   // Quote storage management
   storeQuote(quote: StoredQuote): Promise<void>;

@@ -44,6 +44,8 @@ import { GetTermsOfServiceUseCase } from '../domain/use_cases/get-terms-of-servi
 import { GetCryptoQuoteUseCase } from '../domain/use_cases/get-crypto-quote';
 import { GetSellCryptoQuoteUseCase } from '../domain/use_cases/get-sell-crypto-quote';
 import { FinalizeCryptoSaleUseCase } from '../domain/use_cases/finalize-crypto-sale';
+import { GetBuyCryptoQuoteUseCase } from '../domain/use_cases/get-buy-crypto-quote';
+import { FinalizeCryptoPurchaseUseCase } from '../domain/use_cases/finalize-crypto-purchase';
 import { DeleteUserAccountUseCase } from '../domain/use_cases/delete-user-account';
 
 // Import controllers
@@ -54,6 +56,7 @@ import { PaymentController } from '../presentation/controllers/payment-controlle
 import { TermsController } from '../presentation/controllers/terms-controller';
 import { CryptoQuoteController } from '../presentation/controllers/crypto-quote-controller';
 import { SellCryptoController } from '../presentation/controllers/sell-crypto-controller';
+import { BuyCryptoController } from '../presentation/controllers/buy-crypto-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -387,6 +390,35 @@ export class Container {
     return this.get<SellCryptoController>('SellCryptoController');
   }
 
+  public getBuyCryptoController(): BuyCryptoController {
+    // Initialize buy crypto use cases if not already done
+    if (!this.services.has('GetBuyCryptoQuoteUseCase')) {
+      this.services.set('GetBuyCryptoQuoteUseCase', new GetBuyCryptoQuoteUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('TokenRepository')
+      ));
+    }
+
+    if (!this.services.has('FinalizeCryptoPurchaseUseCase')) {
+      this.services.set('FinalizeCryptoPurchaseUseCase', new FinalizeCryptoPurchaseUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('WalletRepository'),
+        this.services.get('UserRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('BuyCryptoController')) {
+      this.services.set('BuyCryptoController', new BuyCryptoController(
+        this.services.get('GetBuyCryptoQuoteUseCase'),
+        this.services.get('FinalizeCryptoPurchaseUseCase')
+      ));
+    }
+
+    return this.get<BuyCryptoController>('BuyCryptoController');
+  }
+
   public getRepositories() {
     return {
       userRepository: this.get<UserRepository>('UserRepository'),
@@ -434,6 +466,7 @@ export default {
   get termsController() { return containerInstance.getTermsController(); },
   get cryptoQuoteController() { return containerInstance.getCryptoQuoteController(); },
   get sellCryptoController() { return containerInstance.getSellCryptoController(); },
+  get buyCryptoController() { return containerInstance.getBuyCryptoController(); },
   
   // Middleware
   get authMiddleware() { return containerInstance.getAuthMiddleware(); }
