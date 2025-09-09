@@ -22,7 +22,7 @@ Content-Type: application/json
 
 {
   "tokenSymbol": "ADA",
-  "quantity": 1.5,
+  "quantity": 2,
   "userCurrency": "KES"
 }
 
@@ -32,8 +32,8 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tokenSymbol": "ETH",
-  "fiatAmount": 5000,
+  "tokenSymbol": "BTC",
+  "fiatAmount": 50000,
   "userCurrency": "KES"
 }
 
