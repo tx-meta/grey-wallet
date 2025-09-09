@@ -122,6 +122,10 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
   }
 
   async getForexRate(fromCurrency: string, toCurrency: string): Promise<ForexRate> {
+    logger.info('Getting forex rate', {
+      fromCurrency,
+      toCurrency
+    });
     // USD to USD is always 1
     if (fromCurrency.toUpperCase() === toCurrency.toUpperCase()) {
       return {
@@ -161,9 +165,24 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         throw new Error('Invalid response from ExchangeRate API');
       }
 
-      const rate = data.conversion_rates[toCurrency.toUpperCase()];
+      let rate = data.conversion_rates[toCurrency.toUpperCase()];
       if (typeof rate !== 'number') {
         throw new Error(`Exchange rate not found for ${fromCurrency} to ${toCurrency}`);
+      }
+
+      // Fix for inverted rates: If we're converting from a high-value currency to USD
+      // (like KES, NGN, etc.) but we get a rate < 1, it's likely inverted
+      const highValueCurrencies = ['KES', 'NGN', 'UGX', 'TZS', 'GHS', 'ZAR', 'INR', 'PKR', 'BDT', 'LKR'];
+      if (highValueCurrencies.includes(fromCurrency.toUpperCase()) && 
+          toCurrency.toUpperCase() === 'USD' && 
+          rate < 1) {
+        rate = 1 / rate;
+        logger.info('Inverted exchange rate for high-value currency', {
+          from: fromCurrency,
+          to: toCurrency,
+          originalRate: data.conversion_rates[toCurrency.toUpperCase()],
+          correctedRate: rate
+        });
       }
 
       const forexRate: ForexRate = {
@@ -262,12 +281,11 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
     try {
       // 1. Get exchange rate from user currency to USD
       const baseForexRate = await this.getForexRate(request.userCurrency, 'USD');
-      
       // 2. Apply 0.5% spread to the forex rate (favorable to us - user gets less USD)
       const exchangeRateWithSpread = this.applyForexSpread(baseForexRate.rate, true);
-      
+
       // 3. Convert fiat amount to USD with spread applied
-      const fiatAmountUsd = request.fiatAmount * exchangeRateWithSpread;
+      const fiatAmountUsd = request.fiatAmount / exchangeRateWithSpread;
       
       // 4. Get current crypto price in USD
       const cryptoPrice = await this.getCryptoPrice(request.tokenSymbol);

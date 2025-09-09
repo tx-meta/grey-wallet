@@ -4,6 +4,8 @@
 @baseUrl = http://localhost:3000
 @authToken = {{login.response.body.data.session.accessToken}}
 
+@quoteId = {{getBuyCryptoQuote.response.body.data.quoteId}}
+
 ### 1. Login to get authentication token
 # @name login
 POST {{baseUrl}}/api/auth/login
@@ -15,6 +17,7 @@ Content-Type: application/json
 }
 
 ### 2. Get Buy Crypto Quote (Fiat to Quantity) - BTC
+# @name getBuyCryptoQuote
 POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
