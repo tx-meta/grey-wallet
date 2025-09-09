@@ -10,6 +10,7 @@ import { TermsOfServiceRepository } from '../domain/repositories/terms-of-servic
 import { VaultService } from '../application/interfaces/vault-service';
 import { NotificationService } from '../application/interfaces/notification-service';
 import { CryptoService } from '../application/interfaces/crypto-service';
+import { TreasuryService } from '../application/interfaces/treasury-service';
 
 // Import implementations
 import { MockUserRepository } from './repositories/mock-user-repository';
@@ -22,6 +23,8 @@ import { MockNotificationService } from './services/mock-notification-service';
 import { MockCryptoService } from './services/mock-crypto-service';
 import { MpesaPaymentService } from './services/mpesa-payment-service';
 import { CryptoQuoteServiceImpl } from './services/crypto-quote-service';
+import { TreasuryServiceImpl } from './services/treasury-service';
+import prisma from './database/prisma-client';
 
 // Import service factory
 import { ServiceFactory } from './factories/service-factory';
@@ -92,6 +95,7 @@ export class Container {
     this.services.set('NotificationService', new MockNotificationService());
     this.services.set('CryptoService', new MockCryptoService());
     this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
+    this.services.set('TreasuryService', new TreasuryServiceImpl(prisma));
     
     // Always use real HashiCorp Vault service
     try {
@@ -151,6 +155,7 @@ export class Container {
     this.services.set('CryptoService', new MockCryptoService());
     this.services.set('PaymentService', new MpesaPaymentService());
     this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
+    this.services.set('TreasuryService', new TreasuryServiceImpl(prisma));
   }
 
   public get<T>(serviceName: string): T {
@@ -363,9 +368,30 @@ export class Container {
       vaultService: this.get<VaultService>('VaultService'),
       notificationService: this.get<NotificationService>('NotificationService'),
       cryptoService: this.get<CryptoService>('CryptoService'),
+      treasuryService: this.get<TreasuryService>('TreasuryService'),
     };
   }
 }
 
 // Export singleton instance
-export const container = Container.getInstance(); 
+
+// Export singleton instance
+const containerInstance = Container.getInstance();
+
+export default {
+  // Services
+  get treasuryService() { return containerInstance.get('TreasuryService'); },
+  
+  // Controllers
+  get authController() { return containerInstance.getAuthController(); },
+  get walletController() { return containerInstance.getWalletController(); },
+  get phoneVerificationController() { return containerInstance.getPhoneVerificationController(); },
+  get paymentController() { return containerInstance.getPaymentController(); },
+  get termsController() { return containerInstance.getTermsController(); },
+  get cryptoQuoteController() { return containerInstance.getCryptoQuoteController(); },
+  
+  // Middleware
+  get authMiddleware() { return containerInstance.getAuthMiddleware(); }
+};
+
+export const container = containerInstance;
