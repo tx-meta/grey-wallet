@@ -291,85 +291,6 @@ export class PrismaWalletRepository implements WalletRepository {
     };
   }
 
-  async findTransactionByCheckoutRequestId(checkoutRequestId: string): Promise<{
-    id: string;
-    userId: string;
-    transactionType: string;
-    tokenSymbol: string;
-    fiatAmount: number;
-    cryptoAmount: number;
-    phoneNumber: string;
-    status: string;
-  } | null> {
-    const transaction = await this.prisma.transaction.findFirst({
-      where: { checkoutRequestId },
-      select: {
-        id: true,
-        userId: true,
-        transactionType: true,
-        tokenSymbol: true,
-        fiatAmount: true,
-        cryptoAmount: true,
-        phoneNumber: true,
-        status: true,
-      },
-    });
-
-    if (!transaction) {
-      return null;
-    }
-
-    return {
-      id: transaction.id,
-      userId: transaction.userId,
-      transactionType: transaction.transactionType,
-      tokenSymbol: transaction.tokenSymbol,
-      fiatAmount: transaction.fiatAmount,
-      cryptoAmount: transaction.cryptoAmount,
-      phoneNumber: transaction.phoneNumber,
-      status: transaction.status,
-    };
-  }
-
-  async findTransactionByOriginatorConversationId(originatorConversationId: string): Promise<{
-    id: string;
-    userId: string;
-    transactionType: string;
-    tokenSymbol: string;
-    fiatAmount: number;
-    cryptoAmount: number;
-    phoneNumber: string;
-    status: string;
-  } | null> {
-    const transaction = await this.prisma.transaction.findFirst({
-      where: { id: originatorConversationId },
-      select: {
-        id: true,
-        userId: true,
-        transactionType: true,
-        tokenSymbol: true,
-        fiatAmount: true,
-        cryptoAmount: true,
-        phoneNumber: true,
-        status: true,
-      },
-    });
-
-    if (!transaction) {
-      return null;
-    }
-
-    return {
-      id: transaction.id,
-      userId: transaction.userId,
-      transactionType: transaction.transactionType,
-      tokenSymbol: transaction.tokenSymbol,
-      fiatAmount: transaction.fiatAmount,
-      cryptoAmount: transaction.cryptoAmount,
-      phoneNumber: transaction.phoneNumber,
-      status: transaction.status,
-    };
-  }
 
   async getUserTokenBalance(userId: string, tokenSymbol: string): Promise<number> {
     const userTokenBalance = await this.prisma.userTokenBalance.findFirst({
@@ -383,6 +304,68 @@ export class PrismaWalletRepository implements WalletRepository {
     });
 
     return userTokenBalance?.balance || 0;
+  }
+
+  async findTransactionByCheckoutRequestId(checkoutRequestId: string): Promise<{
+    id: string; userId: string; transactionType: string; tokenSymbol: string; fiatAmount: number; cryptoAmount: number; phoneNumber: string; status: string;
+  } | null> {
+    const transaction = await this.prisma.transaction.findFirst({
+      where: { checkoutRequestId },
+      select: {
+        transactionId: true, // This maps to 'id' in the interface
+        userId: true,
+        transactionType: true,
+        tokenSymbol: true,
+        fiatAmount: true,
+        cryptoAmount: true,
+        phoneNumber: true,
+        status: true,
+      },
+    });
+
+    if (!transaction) return null;
+
+    return {
+      id: transaction.transactionId, // Map transactionId to id
+      userId: transaction.userId || '',
+      transactionType: transaction.transactionType || '',
+      tokenSymbol: transaction.tokenSymbol || '',
+      fiatAmount: transaction.fiatAmount || 0,
+      cryptoAmount: transaction.cryptoAmount || 0,
+      phoneNumber: transaction.phoneNumber || '',
+      status: transaction.status,
+    };
+  }
+
+  async findTransactionByOriginatorConversationId(originatorConversationId: string): Promise<{
+    id: string; userId: string; transactionType: string; tokenSymbol: string; fiatAmount: number; cryptoAmount: number; phoneNumber: string; status: string;
+  } | null> {
+    const transaction = await this.prisma.transaction.findFirst({
+      where: { originatorConversationId },
+      select: {
+        transactionId: true, // This maps to 'id' in the interface
+        userId: true,
+        transactionType: true,
+        tokenSymbol: true,
+        fiatAmount: true,
+        cryptoAmount: true,
+        phoneNumber: true,
+        status: true,
+      },
+    });
+
+    if (!transaction) return null;
+
+    return {
+      id: transaction.transactionId, // Map transactionId to id
+      userId: transaction.userId || '',
+      transactionType: transaction.transactionType || '',
+      tokenSymbol: transaction.tokenSymbol || '',
+      fiatAmount: transaction.fiatAmount || 0,
+      cryptoAmount: transaction.cryptoAmount || 0,
+      phoneNumber: transaction.phoneNumber || '',
+      status: transaction.status,
+    };
   }
 
   private mapToDomain(prismaWallet: any): Wallet {
