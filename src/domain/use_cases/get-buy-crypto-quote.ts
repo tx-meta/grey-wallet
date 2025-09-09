@@ -60,12 +60,12 @@ export class GetBuyCryptoQuoteUseCase {
         };
       }
 
-      // 4. Get quote from service
-      const quote = await this.cryptoQuoteService.getQuantityToFiatQuote({
+      // 4. Get quote from service (with storage for finalization)
+      const quote = await this.cryptoQuoteService.getBuyQuantityToFiatQuote({
         tokenSymbol: request.tokenSymbol,
         quantity: request.quantity,
         userCurrency: request.userCurrency
-      });
+      }, request.userId);
 
       logger.info('Buy quantity-to-fiat quote generated successfully', {
         userId: request.userId,
@@ -117,12 +117,12 @@ export class GetBuyCryptoQuoteUseCase {
         };
       }
 
-      // 4. Get quote from service
-      const quote = await this.cryptoQuoteService.getFiatToQuantityQuote({
+      // 4. Get quote from service (with storage for finalization)
+      const quote = await this.cryptoQuoteService.getBuyFiatToQuantityQuote({
         tokenSymbol: request.tokenSymbol,
         fiatAmount: request.fiatAmount,
         userCurrency: request.userCurrency
-      });
+      }, request.userId);
 
       logger.info('Buy fiat-to-quantity quote generated successfully', {
         userId: request.userId,

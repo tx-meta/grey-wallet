@@ -24,7 +24,7 @@ Authorization: Bearer {{authToken}}
 
 {
   "tokenSymbol": "ADA",
-  "fiatAmount": 100,
+  "fiatAmount": 10,
   "userCurrency": "KES"
 }
 

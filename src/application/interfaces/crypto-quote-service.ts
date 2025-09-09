@@ -23,6 +23,7 @@ export interface QuantityToFiatQuoteRequest {
 }
 
 export interface QuantityToFiatQuoteResponse {
+  quoteId: string; // Unique ID for this quote
   tokenSymbol: string;
   quantity: number;
   pricePerTokenUsd: number;
@@ -32,6 +33,7 @@ export interface QuantityToFiatQuoteResponse {
   totalInUserCurrency: number;
   platformFee: number;
   estimatedAt: Date;
+  expiresAt: Date; // Quote expiration time
 }
 
 export interface FiatToQuantityQuoteRequest {
@@ -41,6 +43,7 @@ export interface FiatToQuantityQuoteRequest {
 }
 
 export interface FiatToQuantityQuoteResponse {
+  quoteId: string; // Unique ID for this quote
   tokenSymbol: string;
   fiatAmount: number;
   userCurrency: string;
@@ -50,6 +53,7 @@ export interface FiatToQuantityQuoteResponse {
   quantity: number;
   platformFee: number;
   estimatedAt: Date;
+  expiresAt: Date; // Quote expiration time
 }
 
 // Sell crypto quote interfaces

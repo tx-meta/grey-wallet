@@ -248,7 +248,12 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       // 5. Convert to user currency with spread applied
       const totalInUserCurrency = totalUsd * exchangeRateWithSpread;
 
+      const quoteId = this.generateQuoteId('buy');
+      const estimatedAt = new Date();
+      const expiresAt = new Date(estimatedAt.getTime() + this.QUOTE_DURATION);
+
       const response: QuantityToFiatQuoteResponse = {
+        quoteId,
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         quantity: request.quantity,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
@@ -257,14 +262,19 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         exchangeRate: exchangeRateWithSpread,
         totalInUserCurrency: Math.round(totalInUserCurrency * 100) / 100, // Round to 2 decimal places
         platformFee: 0, // No platform fee for sell quotes
-        estimatedAt: new Date()
+        estimatedAt,
+        expiresAt
       };
+
+      // Note: Quote storage is not implemented for basic buy quotes
+      // These quotes are for immediate use and don't require storage
 
       logger.info('Quantity-to-fiat quote generated', {
         tokenSymbol: request.tokenSymbol,
         quantity: request.quantity,
         totalInUserCurrency: response.totalInUserCurrency,
-        userCurrency: request.userCurrency
+        userCurrency: request.userCurrency,
+        quoteId
       });
 
       return response;
@@ -293,7 +303,12 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       // 5. Calculate quantity user will receive (all of the USD amount goes to crypto)
       const quantity = fiatAmountUsd / cryptoPrice.priceInUsd;
 
+      const quoteId = this.generateQuoteId('buy');
+      const estimatedAt = new Date();
+      const expiresAt = new Date(estimatedAt.getTime() + this.QUOTE_DURATION);
+
       const response: FiatToQuantityQuoteResponse = {
+        quoteId,
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         fiatAmount: request.fiatAmount,
         userCurrency: request.userCurrency.toUpperCase(),
@@ -302,14 +317,19 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         quantity: Math.round(quantity * 100000000) / 100000000, // Round to 8 decimal places
         platformFee: 0, // No platform fee for sell quotes
-        estimatedAt: new Date()
+        estimatedAt,
+        expiresAt
       };
+
+      // Note: Quote storage is not implemented for basic buy quotes
+      // These quotes are for immediate use and don't require storage
 
       logger.info('Fiat-to-quantity quote generated', {
         tokenSymbol: request.tokenSymbol,
         fiatAmount: request.fiatAmount,
         quantity: response.quantity,
-        userCurrency: request.userCurrency
+        userCurrency: request.userCurrency,
+        quoteId
       });
 
       return response;
@@ -506,6 +526,7 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       const expiresAt = new Date(Date.now() + this.QUOTE_DURATION);
 
       const response: QuantityToFiatQuoteResponse = {
+        quoteId,
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         quantity: request.quantity,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
@@ -514,7 +535,8 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         exchangeRate: exchangeRateWithSpread,
         totalInUserCurrency: Math.round(totalInUserCurrency * 100) / 100,
         platformFee: Math.round(platformFee * 100) / 100,
-        estimatedAt
+        estimatedAt,
+        expiresAt
       };
 
       // 7. Store the quote for later use
@@ -582,6 +604,7 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       const expiresAt = new Date(Date.now() + this.QUOTE_DURATION);
 
       const response: FiatToQuantityQuoteResponse = {
+        quoteId,
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         fiatAmount: request.fiatAmount,
         userCurrency: request.userCurrency.toUpperCase(),
@@ -590,7 +613,8 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         quantity: Math.round(quantity * 100000000) / 100000000, // Round to 8 decimal places
         platformFee: Math.round(platformFee * 100) / 100,
-        estimatedAt
+        estimatedAt,
+        expiresAt
       };
 
       // 8. Store the quote for later use
