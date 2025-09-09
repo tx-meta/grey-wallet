@@ -599,6 +599,127 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Admin - Treasury",
+			"item": [
+				{
+					"name": "Treasury Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/treasury/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"treasury",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Treasury Balances",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/treasury/balances",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"treasury",
+								"balances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Treasury Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/treasury/balance/{{treasuryAccountType}}/{{treasuryAssetSymbol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"treasury",
+								"balance",
+								"{{treasuryAccountType}}",
+								"{{treasuryAssetSymbol}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Treasury Transaction History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/treasury/transactions?accountType={{treasuryAccountType}}&assetSymbol={{treasuryAssetSymbol}}&limit={{treasuryTransactionLimit}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"treasury",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "accountType",
+									"value": "{{treasuryAccountType}}"
+								},
+								{
+									"key": "assetSymbol",
+									"value": "{{treasuryAssetSymbol}}"
+								},
+								{
+									"key": "limit",
+									"value": "{{treasuryTransactionLimit}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Treasury Transactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/treasury/transactions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"treasury",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

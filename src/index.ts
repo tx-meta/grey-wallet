@@ -23,6 +23,7 @@ import cryptoQuoteRoutes from './presentation/routes/crypto-quote-routes';
 import sellCryptoRoutes from './presentation/routes/sell-crypto-routes';
 import { createTermsRoutes } from './presentation/routes/terms-routes';
 import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
+import { createAdminRoutes } from './presentation/routes/admin-routes';
 
 // Import middleware
 import { errorHandler } from './presentation/middleware/error-handler';
@@ -115,6 +116,10 @@ class App {
     // Test SMS routes (development only)
     const testSMSRoutes = createTestSMSRoutes();
     this.app.use('/api/test/sms', testSMSRoutes);
+    
+    // Admin routes (treasury management)
+    const adminRoutes = createAdminRoutes(container.getServices().treasuryService);
+    this.app.use('/api/admin', adminRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {
