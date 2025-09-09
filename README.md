@@ -1,6 +1,6 @@
-# Grey Wallet API
+# Zao Wallet API
 
-A hosted crypto wallet API built with TypeScript, Express.js, and Clean Architecture principles. Supports multiple cryptocurrencies including Bitcoin, Ethereum, Cardano, and Solana.
+A hosted crypto wallet API built with TypeScript, Express.js, and Clean Architecture principles. Supports multiple cryptocurrencies including Bitcoin, Ethereum, Cardano, and Solana with full M-Pesa integration for seamless fiat-to-crypto transactions.
 
 ## Features
 
@@ -9,8 +9,10 @@ A hosted crypto wallet API built with TypeScript, Express.js, and Clean Architec
 - 💰 **Wallet Creation**: Automatic wallet and address generation for each supported token
 - 🔑 **Secure Key Management**: Master keys stored encrypted in HashiCorp Vault
 - 📱 **Multi-channel Verification**: Email and SMS verification
-- 🏦 **On/Off Ramp**: Fiat integration with M-Pesa and other payment methods
+- 🏦 **M-Pesa Integration**: Full M-Pesa STK Push (buy) and B2C (sell) integration
+- 💱 **Quote-Based Trading**: Real-time crypto quotes with M-Pesa payment processing
 - 🔄 **Transaction Management**: Send, receive, and track crypto transactions
+- 📞 **M-Pesa Callbacks**: Automated payment confirmation and disbursement processing
 
 ## Architecture
 
@@ -55,6 +57,7 @@ tests/                # Test files
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Supabase Auth (exclusively)
 - **Key Management**: HashiCorp Vault
+- **Payment Processing**: M-Pesa Daraja API (STK Push & B2C)
 - **Logging**: Winston
 - **Validation**: Express Validator
 - **Testing**: Jest
@@ -68,6 +71,54 @@ tests/                # Test files
 - Supabase account
 - Twilio account (for SMS)
 - SendGrid account (for email)
+- M-Pesa Daraja API credentials (for payment processing)
+
+## M-Pesa Integration
+
+The API includes full M-Pesa integration for seamless fiat-to-crypto transactions:
+
+### Buy Crypto (STK Push)
+1. User requests a quote for buying crypto with fiat amount
+2. System generates real-time quote with current exchange rates
+3. User finalizes purchase, triggering M-Pesa STK Push
+4. User enters M-Pesa PIN on their phone
+5. M-Pesa sends callback confirming payment
+6. System adds crypto to user's wallet
+
+### Sell Crypto (B2C Disbursement)
+1. User requests a quote for selling crypto
+2. System generates real-time quote with current exchange rates
+3. User finalizes sale, system transfers crypto to treasury
+4. System initiates M-Pesa B2C disbursement to user's phone
+5. M-Pesa sends callback confirming disbursement
+6. Transaction is marked as completed
+
+### M-Pesa Configuration
+Set the following environment variables for M-Pesa integration:
+
+```bash
+# Basic M-Pesa API credentials
+DARAJA_CONSUMER_KEY=your_consumer_key
+DARAJA_CONSUMER_SECRET=your_consumer_secret
+DARAJA_SHORTCODE=your_shortcode
+DARAJA_API_PASSKEY=your_api_passkey
+DARAJA_TOKEN_URL=https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials
+
+# STK Push (Buy Crypto)
+DARAJA_STK_PUSH_URL=https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
+DARAJA_STK_PUSH_PARTY_B=your_shortcode
+DARAJA_STK_PUSH_RESULT_URL=https://your-domain.com/api/mpesa/callback/stk-push
+DARAJA_STK_PUSH_TIMEOUT_URL=https://your-domain.com/api/mpesa/callback/stk-push
+
+# B2C (Sell Crypto)
+DARAJA_B2C_API_URL=https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest
+DARAJA_B2C_SHORTCODE=your_b2c_shortcode
+DARAJA_B2C_INITIATOR_NAME=your_initiator_name
+DARAJA_B2C_INITIATOR_PASSWORD=your_initiator_password
+DARAJA_B2C_RESULT_URL=https://your-domain.com/api/mpesa/callback/b2c
+DARAJA_B2C_QUEUE_TIMEOUT_URL=https://your-domain.com/api/mpesa/callback/b2c
+DARAJA_SECURITY_CREDENTIAL=your_encrypted_security_credential
+```
 
 ## Installation
 

@@ -4,11 +4,11 @@
  */
 
 import { CryptoQuoteService } from '../../application/interfaces/crypto-quote-service';
-// PaymentService import removed as we're simulating payouts for now
 import { WalletRepository } from '../repositories/wallet-repository';
 import { UserRepository } from '../repositories/user-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { NotificationService } from '../../application/interfaces/notification-service';
+import { MpesaPaymentService } from '../../infrastructure/services/mpesa/mpesa-payment-service';
 import logger from '../../shared/logging';
 
 export interface FinalizeCryptoSaleRequest {
@@ -32,13 +32,17 @@ export interface FinalizeCryptoSaleResult {
 }
 
 export class FinalizeCryptoSaleUseCase {
+  private mpesaService: MpesaPaymentService;
+
   constructor(
     private cryptoQuoteService: CryptoQuoteService,
     private walletRepository: WalletRepository,
     private userRepository: UserRepository,
     private tokenRepository: TokenRepository,
     private notificationService: NotificationService
-  ) {}
+  ) {
+    this.mpesaService = new MpesaPaymentService();
+  }
 
   async execute(request: FinalizeCryptoSaleRequest): Promise<FinalizeCryptoSaleResult> {
     try {
@@ -137,40 +141,19 @@ export class FinalizeCryptoSaleUseCase {
         currentBalance - quote.quantity
       );
 
-      // 10. For now, we simulate the M-Pesa payout process
-      // In a real implementation, this would use M-Pesa B2C API
-      const mpesaResult = await this.simulateMpesaPayout({
-        amount: quote.fiatAmount,
+      // 10. Initiate M-Pesa B2C payment (disbursement to user)
+      const mpesaResult = await this.mpesaService.initiateB2CPayment({
         phoneNumber: request.phoneNumber,
-        accountReference: transactionId,
-        transactionDesc: `Crypto sale - ${quote.tokenSymbol}`
+        amount: quote.fiatAmount,
+        transactionId: transactionId,
+        remarks: `Crypto sale - ${quote.tokenSymbol}`
       });
 
-      if (!mpesaResult.success) {
-        // Rollback the balance update
-        await this.walletRepository.updateUserTokenBalance(
-          request.userId, 
-          quote.tokenSymbol, 
-          currentBalance
-        );
-        
-        await this.walletRepository.updateTransactionStatus(transactionId, 'failed');
-        
-        return {
-          success: false,
-          error: 'Failed to initiate M-Pesa payment',
-        };
-      }
-
       // 11. Update transaction with payment details
-      const paymentDetails: any = { status: 'processing' };
-      if (mpesaResult.checkoutRequestId) {
-        paymentDetails.checkoutRequestId = mpesaResult.checkoutRequestId;
-      }
-      if (mpesaResult.merchantRequestId) {
-        paymentDetails.merchantRequestId = mpesaResult.merchantRequestId;
-      }
-      await this.walletRepository.updateTransactionPaymentDetails(transactionId, paymentDetails);
+      await this.walletRepository.updateTransactionPaymentDetails(transactionId, {
+        status: 'processing',
+        originatorConversationId: mpesaResult.OriginatorConversationID || undefined
+      });
 
       // 12. Send notification SMS
       await this.notificationService.sendSMSOTP(
@@ -188,7 +171,8 @@ export class FinalizeCryptoSaleUseCase {
         quoteId: request.quoteId,
         tokenSymbol: quote.tokenSymbol,
         quantitySold: quote.quantity,
-        fiatAmount: quote.fiatAmount
+        fiatAmount: quote.fiatAmount,
+        originatorConversationId: mpesaResult.OriginatorConversationID
       });
 
       return {
@@ -199,7 +183,7 @@ export class FinalizeCryptoSaleUseCase {
           quantitySold: quote.quantity,
           fiatAmount: quote.fiatAmount,
           userCurrency: quote.userCurrency,
-          mpesaRequestId: mpesaResult.checkoutRequestId || '',
+          mpesaRequestId: mpesaResult.OriginatorConversationID || '',
           status: 'completed'
         }
       };
@@ -304,41 +288,4 @@ export class FinalizeCryptoSaleUseCase {
     return address || null;
   }
 
-  private async simulateMpesaPayout(request: {
-    amount: number;
-    phoneNumber: string;
-    accountReference: string;
-    transactionDesc: string;
-  }): Promise<{ success: boolean; checkoutRequestId?: string; merchantRequestId?: string; error?: string }> {
-    try {
-      // In a real implementation, this would use the paymentService to initiate M-Pesa B2C payout
-      // For now, we simulate a successful payout and mark the transaction as completed
-      
-      logger.info('Simulating M-Pesa payout', {
-        amount: request.amount,
-        phoneNumber: request.phoneNumber.replace(/\d(?=\d{4})/g, '*'),
-        accountReference: request.accountReference,
-        transactionDesc: request.transactionDesc
-      });
-
-      // Mark transaction as completed since we're simulating
-      await this.walletRepository.updateTransactionStatus(request.accountReference, 'completed');
-
-      return {
-        success: true,
-        checkoutRequestId: `SELL_${request.accountReference}`,
-        merchantRequestId: `SELL_MERCHANT_${request.accountReference}`
-      };
-    } catch (error) {
-      logger.error('Failed to simulate M-Pesa payout', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        accountReference: request.accountReference
-      });
-
-      return {
-        success: false,
-        error: 'Failed to process payout'
-      };
-    }
-  }
 }

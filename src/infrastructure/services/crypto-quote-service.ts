@@ -237,6 +237,7 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         userCurrency: request.userCurrency.toUpperCase(),
         exchangeRate: exchangeRateWithSpread,
         totalInUserCurrency: Math.round(totalInUserCurrency * 100) / 100, // Round to 2 decimal places
+        platformFee: 0, // No platform fee for sell quotes
         estimatedAt: new Date()
       };
 
@@ -282,6 +283,7 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         fiatAmountUsd: Math.round(fiatAmountUsd * 100) / 100,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         quantity: Math.round(quantity * 100000000) / 100000000, // Round to 8 decimal places
+        platformFee: 0, // No platform fee for sell quotes
         estimatedAt: new Date()
       };
 
@@ -347,7 +349,6 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       const storedQuote: StoredQuote = {
         quoteId,
         userId,
-        quoteType: 'sell-quantity-to-fiat',
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         quantity: request.quantity,
         fiatAmount: netAmountToUser,
@@ -355,7 +356,6 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         exchangeRate: exchangeRateWithSpread,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         platformFee,
-        netAmountToUser,
         estimatedAt,
         expiresAt
       };
@@ -367,7 +367,6 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         userId,
         tokenSymbol: request.tokenSymbol,
         quantity: request.quantity,
-        netAmountToUser,
         userCurrency: request.userCurrency
       });
 
@@ -428,7 +427,6 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
       const storedQuote: StoredQuote = {
         quoteId,
         userId,
-        quoteType: 'sell-fiat-to-quantity',
         tokenSymbol: request.tokenSymbol.toUpperCase(),
         quantity,
         fiatAmount: request.fiatAmount,
@@ -436,7 +434,6 @@ export class CryptoQuoteServiceImpl implements CryptoQuoteService {
         exchangeRate: exchangeRateWithSpread,
         pricePerTokenUsd: cryptoPrice.priceInUsd,
         platformFee,
-        netAmountToUser: request.fiatAmount,
         estimatedAt,
         expiresAt
       };

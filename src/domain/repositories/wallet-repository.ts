@@ -46,11 +46,13 @@ export interface WalletRepository {
   updateTransactionStatus(transactionId: string, status: string): Promise<void>;
   
   updateTransactionPaymentDetails(transactionId: string, paymentDetails: {
-    checkoutRequestId?: string;
-    merchantRequestId?: string;
-    mpesaReceiptNumber?: string;
-    transactionDate?: string;
-    status?: string;
+    checkoutRequestId?: string | undefined;
+    merchantRequestId?: string | undefined;
+    mpesaReceiptNumber?: string | undefined;
+    transactionDate?: string | undefined;
+    status?: string | undefined;
+    originatorConversationId?: string | undefined;
+    amount?: number | undefined;
   }): Promise<void>;
   
   updateUserTokenBalance(userId: string, tokenSymbol: string, amount: number): Promise<void>;
@@ -71,4 +73,28 @@ export interface WalletRepository {
     createdAt: Date;
     updatedAt: Date;
   } | null>;
+
+  findTransactionByCheckoutRequestId(checkoutRequestId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null>;
+
+  findTransactionByOriginatorConversationId(originatorConversationId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null>;
+
+  getUserTokenBalance(userId: string, tokenSymbol: string): Promise<number>;
 } 

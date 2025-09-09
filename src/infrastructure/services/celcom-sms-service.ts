@@ -80,6 +80,22 @@ export class CelcomSMSService implements NotificationService {
     }
   }
 
+  async sendNotification(notification: {
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }): Promise<void> {
+    logger.info('Celcom SMS notification sent', {
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      data: notification.data
+    });
+  }
+
   async isHealthy(): Promise<boolean> {
     try {
       // Test API connectivity by checking account balance

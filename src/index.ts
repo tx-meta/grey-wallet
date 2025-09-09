@@ -22,6 +22,7 @@ import paymentRoutes from './presentation/routes/payment-routes';
 import cryptoQuoteRoutes from './presentation/routes/crypto-quote-routes';
 import sellCryptoRoutes from './presentation/routes/sell-crypto-routes';
 import buyCryptoRoutes from './presentation/routes/buy-crypto-routes';
+import mpesaCallbackRoutes from './presentation/routes/mpesa-callback-routes';
 import { createTermsRoutes } from './presentation/routes/terms-routes';
 import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
 import { createAdminRoutes } from './presentation/routes/admin-routes';
@@ -109,6 +110,7 @@ class App {
     this.app.use('/api/quotes/crypto', cryptoQuoteRoutes);
     this.app.use('/api/sell/crypto', sellCryptoRoutes);
     this.app.use('/api/buy/crypto', buyCryptoRoutes);
+    this.app.use('/api/mpesa/callback', mpesaCallbackRoutes);
     
     // Terms of service routes
     const container = require('./infrastructure/container').container;

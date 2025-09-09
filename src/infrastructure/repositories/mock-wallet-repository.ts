@@ -9,6 +9,8 @@ import { WalletRepository } from '../../domain/repositories/wallet-repository';
 export class MockWalletRepository implements WalletRepository {
   private wallets: Map<string, Wallet> = new Map();
   private addressCounters: Map<string, number> = new Map();
+  private transactions: any[] = [];
+  private userTokenBalances: Map<string, Map<string, number>> = new Map();
 
   async save(wallet: Wallet): Promise<Wallet> {
     this.wallets.set(wallet.walletId, wallet);
@@ -163,5 +165,65 @@ export class MockWalletRepository implements WalletRepository {
     }
     
     return null;
+  }
+
+  async findTransactionByCheckoutRequestId(checkoutRequestId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null> {
+    // Mock implementation - find transaction by checkout request ID
+    const transaction = this.transactions.find(t => t.checkoutRequestId === checkoutRequestId);
+    if (transaction) {
+      return {
+        id: transaction.id,
+        userId: transaction.userId,
+        transactionType: transaction.transactionType,
+        tokenSymbol: transaction.tokenSymbol,
+        fiatAmount: transaction.fiatAmount,
+        cryptoAmount: transaction.cryptoAmount,
+        phoneNumber: transaction.phoneNumber,
+        status: transaction.status,
+      };
+    }
+    return null;
+  }
+
+  async findTransactionByOriginatorConversationId(originatorConversationId: string): Promise<{
+    id: string;
+    userId: string;
+    transactionType: string;
+    tokenSymbol: string;
+    fiatAmount: number;
+    cryptoAmount: number;
+    phoneNumber: string;
+    status: string;
+  } | null> {
+    // Mock implementation - find transaction by originator conversation ID
+    const transaction = this.transactions.find(t => t.id === originatorConversationId);
+    if (transaction) {
+      return {
+        id: transaction.id,
+        userId: transaction.userId,
+        transactionType: transaction.transactionType,
+        tokenSymbol: transaction.tokenSymbol,
+        fiatAmount: transaction.fiatAmount,
+        cryptoAmount: transaction.cryptoAmount,
+        phoneNumber: transaction.phoneNumber,
+        status: transaction.status,
+      };
+    }
+    return null;
+  }
+
+  async getUserTokenBalance(userId: string, tokenSymbol: string): Promise<number> {
+    // Mock implementation - get user token balance
+    const userBalances = this.userTokenBalances.get(userId) || new Map();
+    return userBalances.get(tokenSymbol.toUpperCase()) || 0;
   }
 } 

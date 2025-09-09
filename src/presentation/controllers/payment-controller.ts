@@ -4,7 +4,6 @@
  */
 
 import { Request, Response } from 'express';
-import { InitiateCryptoPurchaseUseCase } from '../../domain/use_cases/initiate-crypto-purchase';
 import { ProcessPaymentCallbackUseCase } from '../../domain/use_cases/process-payment-callback';
 import { GetTransactionStatusUseCase } from '../../domain/use_cases/get-transaction-status';
 import { processCallbackData, detectCallbackType } from '../../shared/utils/callback-formatter';
@@ -12,7 +11,6 @@ import logger from '../../shared/logging';
 
 export class PaymentController {
   constructor(
-    private initiateCryptoPurchaseUseCase: InitiateCryptoPurchaseUseCase,
     private processPaymentCallbackUseCase: ProcessPaymentCallbackUseCase,
     private getTransactionStatusUseCase: GetTransactionStatusUseCase
   ) {}

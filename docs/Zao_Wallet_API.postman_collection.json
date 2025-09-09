@@ -1,0 +1,484 @@
+{
+	"info": {
+		"_postman_id": "zao-wallet-api-collection",
+		"name": "Zao Wallet API",
+		"description": "Complete API collection for Zao Wallet backend service with M-Pesa integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"phone\": \"{{userPhone}}\",\n  \"password\": \"{{userPassword}}\",\n  \"firstName\": \"{{userFirstName}}\",\n  \"lastName\": \"{{userLastName}}\",\n  \"country\": \"{{userCountry}}\",\n  \"currency\": \"{{userCurrency}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "signup"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Buy Crypto (New Quote System)",
+			"item": [
+				{
+					"name": "Get Buy Quote - Fiat to Quantity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"BTC\",\n  \"fiatAmount\": 1000,\n  \"userCurrency\": \"KES\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "buy", "crypto", "fiat-to-quantity-quote"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Buy Quote - Quantity to Fiat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"BTC\",\n  \"quantity\": 0.001,\n  \"userCurrency\": \"KES\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/buy/crypto/quantity-to-fiat-quote",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "buy", "crypto", "quantity-to-fiat-quote"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Crypto Purchase",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"{{quoteId}}\",\n  \"phoneNumber\": \"254726367035\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/buy/crypto/finalize",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "buy", "crypto", "finalize"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sell Crypto (Quote System)",
+			"item": [
+				{
+					"name": "Get Sell Quote - Quantity to Fiat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"BTC\",\n  \"quantity\": 0.001,\n  \"userCurrency\": \"KES\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sell/crypto/quantity-to-fiat-quote",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sell", "crypto", "quantity-to-fiat-quote"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sell Quote - Fiat to Quantity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"BTC\",\n  \"fiatAmount\": 50000,\n  \"userCurrency\": \"KES\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sell/crypto/fiat-to-quantity-quote",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sell", "crypto", "fiat-to-quantity-quote"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Crypto Sale",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"{{quoteId}}\",\n  \"phoneNumber\": \"254726367035\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sell/crypto/finalize",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sell", "crypto", "finalize"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "M-Pesa Callbacks",
+			"item": [
+				{
+					"name": "STK Push Callback - Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Body\": {\n    \"stkCallback\": {\n      \"MerchantRequestID\": \"ws_CO_123456789\",\n      \"CheckoutRequestID\": \"ws_CO_123456789\",\n      \"ResultCode\": 0,\n      \"ResultDesc\": \"The service request is processed successfully.\",\n      \"CallbackMetadata\": {\n        \"Item\": [\n          {\n            \"Name\": \"Amount\",\n            \"Value\": 1025\n          },\n          {\n            \"Name\": \"MpesaReceiptNumber\",\n            \"Value\": \"QK123456789\"\n          },\n          {\n            \"Name\": \"TransactionDate\",\n            \"Value\": \"20241230123456\"\n          },\n          {\n            \"Name\": \"PhoneNumber\",\n            \"Value\": \"254700000000\"\n          }\n        ]\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/stk-push",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mpesa", "callback", "stk-push"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "STK Push Callback - Failed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Body\": {\n    \"stkCallback\": {\n      \"MerchantRequestID\": \"ws_CO_123456789\",\n      \"CheckoutRequestID\": \"ws_CO_123456789\",\n      \"ResultCode\": 1,\n      \"ResultDesc\": \"The balance is insufficient for the transaction.\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/stk-push",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mpesa", "callback", "stk-push"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "B2C Callback - Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 0,\n    \"ResultDesc\": \"The service request is processed successfully.\",\n    \"OriginatorConversationID\": \"transaction_123456789\",\n    \"ConversationID\": \"AG_20241230_123456789\",\n    \"TransactionID\": \"QK123456789\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionAmount\",\n          \"Value\": 50000\n        },\n        {\n          \"Key\": \"TransactionReceipt\",\n          \"Value\": \"QK123456789\"\n        },\n        {\n          \"Key\": \"B2CRecipientIsRegisteredCustomer\",\n          \"Value\": \"Y\"\n        },\n        {\n          \"Key\": \"B2CChargesPaidAccountAvailableFunds\",\n          \"Value\": 100000\n        },\n        {\n          \"Key\": \"ReceiverPartyPublicName\",\n          \"Value\": \"254700000000 - John Doe\"\n        },\n        {\n          \"Key\": \"TransactionCompletedDateTime\",\n          \"Value\": \"30.12.2024 12:34:56\"\n        },\n        {\n          \"Key\": \"B2CUtilityAccountAvailableFunds\",\n          \"Value\": 100000\n        },\n        {\n          \"Key\": \"B2CWorkingAccountAvailableFunds\",\n          \"Value\": 100000\n        }\n      ]\n    },\n    \"ReferenceData\": {\n      \"ReferenceItem\": {\n        \"Key\": \"QueueTimeoutURL\",\n        \"Value\": \"https://your-domain.com/api/mpesa/callback/b2c\"\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2c",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mpesa", "callback", "b2c"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "B2C Callback - Failed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 1,\n    \"ResultDesc\": \"The balance is insufficient for the transaction.\",\n    \"OriginatorConversationID\": \"transaction_123456789\",\n    \"ConversationID\": \"AG_20241230_123456789\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2c",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mpesa", "callback", "b2c"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wallet Management",
+			"item": [
+				{
+					"name": "Get Wallet Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/info",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wallet", "info"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/balance?tokenSymbol=BTC",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wallet", "balance"],
+							"query": [
+								{
+									"key": "tokenSymbol",
+									"value": "BTC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supported Tokens",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/tokens",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wallet", "tokens"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Legacy Endpoints (Deprecated)",
+			"item": [
+				{
+					"name": "Initiate Crypto Purchase (Deprecated)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"BTC\",\n  \"fiatAmount\": 1000,\n  \"phoneNumber\": \"254726367035\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/crypto/purchase",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "crypto", "purchase"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "quoteId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userEmail",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "userPassword",
+			"value": "SecurePass123",
+			"type": "string"
+		},
+		{
+			"key": "userPhone",
+			"value": "254700000000",
+			"type": "string"
+		},
+		{
+			"key": "userFirstName",
+			"value": "John",
+			"type": "string"
+		},
+		{
+			"key": "userLastName",
+			"value": "Doe",
+			"type": "string"
+		},
+		{
+			"key": "userCountry",
+			"value": "KE",
+			"type": "string"
+		},
+		{
+			"key": "userCurrency",
+			"value": "KES",
+			"type": "string"
+		}
+	]
+}

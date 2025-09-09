@@ -4,11 +4,12 @@
  * Follows the same pattern as FinalizeCryptoSaleUseCase
  */
 
-import { CryptoQuoteService, StoredQuote } from '../../application/interfaces/crypto-quote-service';
+import { CryptoQuoteService } from '../../application/interfaces/crypto-quote-service';
 import { WalletRepository } from '../repositories/wallet-repository';
 import { UserRepository } from '../repositories/user-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { NotificationService } from '../../application/interfaces/notification-service';
+import { MpesaPaymentService } from '../../infrastructure/services/mpesa/mpesa-payment-service';
 import logger from '../../shared/logging';
 
 export interface FinalizeCryptoPurchaseRequest {
@@ -33,13 +34,17 @@ export interface FinalizeCryptoPurchaseResult {
 }
 
 export class FinalizeCryptoPurchaseUseCase {
+  private mpesaService: MpesaPaymentService;
+
   constructor(
     private cryptoQuoteService: CryptoQuoteService,
     private walletRepository: WalletRepository,
     private userRepository: UserRepository,
     private tokenRepository: TokenRepository,
     private notificationService: NotificationService
-  ) {}
+  ) {
+    this.mpesaService = new MpesaPaymentService();
+  }
 
   async execute(request: FinalizeCryptoPurchaseRequest): Promise<FinalizeCryptoPurchaseResult> {
     try {
@@ -106,26 +111,18 @@ export class FinalizeCryptoPurchaseUseCase {
         status: 'pending'
       });
 
-      // 8. Initiate M-Pesa payment
-      const paymentResult = await this.initiateMpesaPayment({
-        amount: totalAmount,
+      // 8. Initiate M-Pesa STK Push payment
+      const paymentResult = await this.mpesaService.initiateSTKPush({
         phoneNumber: request.phoneNumber,
+        amount: totalAmount,
         accountReference: transactionId,
         transactionDesc: `Crypto purchase - ${quote.tokenSymbol}`
       });
 
-      if (!paymentResult.success) {
-        await this.walletRepository.updateTransactionStatus(transactionId, 'failed');
-        return {
-          success: false,
-          error: paymentResult.error || 'Payment initiation failed',
-        };
-      }
-
       // 9. Update transaction with payment details
       await this.walletRepository.updateTransactionPaymentDetails(transactionId, {
-        checkoutRequestId: paymentResult.checkoutRequestId,
-        merchantRequestId: paymentResult.merchantRequestId,
+        checkoutRequestId: paymentResult.CheckoutRequestID || undefined,
+        merchantRequestId: paymentResult.MerchantRequestID || undefined,
         status: 'processing'
       });
 
@@ -149,7 +146,8 @@ export class FinalizeCryptoPurchaseUseCase {
         tokenSymbol: quote.tokenSymbol,
         quantity: quote.quantity,
         fiatAmount: quote.fiatAmount,
-        checkoutRequestId: paymentResult.checkoutRequestId
+        checkoutRequestId: paymentResult.CheckoutRequestID,
+        merchantRequestId: paymentResult.MerchantRequestID
       });
 
       return {
@@ -203,45 +201,4 @@ export class FinalizeCryptoPurchaseUseCase {
     return Math.round(fiatAmount * 0.01 * 100) / 100;
   }
 
-  private async initiateMpesaPayment(params: {
-    amount: number;
-    phoneNumber: string;
-    accountReference: string;
-    transactionDesc: string;
-  }): Promise<{ success: boolean; checkoutRequestId?: string; merchantRequestId?: string; error?: string }> {
-    try {
-      // For now, simulate M-Pesa payment initiation
-      // In a real implementation, this would call the actual M-Pesa API
-      const checkoutRequestId = `ws_CO_${Date.now()}`;
-      const merchantRequestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-      logger.info('M-Pesa payment initiated (simulated)', {
-        amount: params.amount,
-        phoneNumber: params.phoneNumber.replace(/\d(?=\d{4})/g, '*'),
-        accountReference: params.accountReference,
-        checkoutRequestId,
-        merchantRequestId
-      });
-
-      // Simulate successful payment initiation
-      return {
-        success: true,
-        checkoutRequestId,
-        merchantRequestId
-      };
-    } catch (error) {
-      logger.error('M-Pesa payment initiation failed', {
-        params: {
-          ...params,
-          phoneNumber: params.phoneNumber.replace(/\d(?=\d{4})/g, '*')
-        },
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Payment initiation failed'
-      };
-    }
-  }
 }

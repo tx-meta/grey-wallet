@@ -333,7 +333,6 @@ export class Container {
 
     if (!this.services.has('PaymentController')) {
       this.services.set('PaymentController', new PaymentController(
-        this.services.get('InitiateCryptoPurchaseUseCase'),
         this.services.get('ProcessPaymentCallbackUseCase'),
         this.services.get('GetTransactionStatusUseCase')
       ));

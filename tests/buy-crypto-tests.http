@@ -1,0 +1,180 @@
+### Buy Crypto Tests (New Quote-Based System)
+
+# Variables
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.data.session.accessToken}}
+
+### 1. Login to get authentication token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test2@example.com",
+  "password": "SecurePass123"
+}
+
+### 2. Get Buy Crypto Quote (Fiat to Quantity) - BTC
+POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "ADA",
+  "fiatAmount": 100,
+  "userCurrency": "KES"
+}
+
+### 3. Get Buy Crypto Quote (Fiat to Quantity) - ETH
+POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "ETH",
+  "fiatAmount": 500,
+  "userCurrency": "KES"
+}
+
+### 4. Get Buy Crypto Quote (Quantity to Fiat) - BTC
+POST {{baseUrl}}/api/buy/crypto/quantity-to-fiat-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "quantity": 0.001,
+  "userCurrency": "KES"
+}
+
+### 5. Get Buy Crypto Quote (Quantity to Fiat) - ETH
+POST {{baseUrl}}/api/buy/crypto/quantity-to-fiat-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "ETH",
+  "quantity": 0.1,
+  "userCurrency": "KES"
+}
+
+### 6. Finalize Crypto Purchase (Using Quote ID from step 2)
+POST {{baseUrl}}/api/buy/crypto/finalize
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quoteId": "{{quoteId}}",
+  "phoneNumber": "254726367035"
+}
+
+### 7. Finalize Crypto Purchase (Using Quote ID from step 4)
+POST {{baseUrl}}/api/buy/crypto/finalize
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quoteId": "{{quoteId}}",
+  "phoneNumber": "254726367035"
+}
+
+### 8. Test Invalid Quote ID
+POST {{baseUrl}}/api/buy/crypto/finalize
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quoteId": "invalid-quote-id",
+  "phoneNumber": "254726367035"
+}
+
+### 9. Test Missing Phone Number
+POST {{baseUrl}}/api/buy/crypto/finalize
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quoteId": "{{quoteId}}"
+}
+
+### 10. Test Invalid Token Symbol
+POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "INVALID",
+  "fiatAmount": 1000,
+  "userCurrency": "KES"
+}
+
+### 11. Test Invalid Currency
+POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000,
+  "userCurrency": "INVALID"
+}
+
+### 12. Test Without Authentication
+POST {{baseUrl}}/api/buy/crypto/fiat-to-quantity-quote
+Content-Type: application/json
+
+{
+  "tokenSymbol": "BTC",
+  "fiatAmount": 1000,
+  "userCurrency": "KES"
+}
+
+### 13. M-Pesa STK Push Callback (Success)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789",
+      "CheckoutRequestID": "ws_CO_123456789",
+      "ResultCode": 0,
+      "ResultDesc": "The service request is processed successfully.",
+      "CallbackMetadata": {
+        "Item": [
+          {
+            "Name": "Amount",
+            "Value": 1025
+          },
+          {
+            "Name": "MpesaReceiptNumber",
+            "Value": "QK123456789"
+          },
+          {
+            "Name": "TransactionDate",
+            "Value": "20241230123456"
+          },
+          {
+            "Name": "PhoneNumber",
+            "Value": "254700000000"
+          }
+        ]
+      }
+    }
+  }
+}
+
+### 14. M-Pesa STK Push Callback (Failed)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789",
+      "CheckoutRequestID": "ws_CO_123456789",
+      "ResultCode": 1,
+      "ResultDesc": "The balance is insufficient for the transaction."
+    }
+  }
+}
