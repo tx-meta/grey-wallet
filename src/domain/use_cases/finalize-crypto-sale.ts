@@ -8,6 +8,7 @@ import { WalletRepository } from '../repositories/wallet-repository';
 import { UserRepository } from '../repositories/user-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { NotificationService } from '../../application/interfaces/notification-service';
+import { TreasuryService } from '../../application/interfaces/treasury-service';
 import { MpesaPaymentService } from '../../infrastructure/services/mpesa/mpesa-payment-service';
 import logger from '../../shared/logging';
 
@@ -39,7 +40,8 @@ export class FinalizeCryptoSaleUseCase {
     private walletRepository: WalletRepository,
     private userRepository: UserRepository,
     private tokenRepository: TokenRepository,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private treasuryService: TreasuryService
   ) {
     this.mpesaService = new MpesaPaymentService();
   }
@@ -119,18 +121,21 @@ export class FinalizeCryptoSaleUseCase {
         status: 'pending'
       });
 
-      // 8. Transfer crypto from user to treasury wallet
-      const treasuryTransferResult = await this.transferToTreasuryWallet(
+      // 8. Update treasury balances (pooled wallet model)
+      const treasuryUpdateResult = await this.updateTreasuryBalances(
+        transactionId,
+        'OFF_RAMP',
         quote.tokenSymbol,
         quote.quantity,
-        userAddress.address
+        quote.fiatAmount,
+        quote.userCurrency
       );
 
-      if (!treasuryTransferResult.success) {
+      if (!treasuryUpdateResult.success) {
         await this.walletRepository.updateTransactionStatus(transactionId, 'failed');
         return {
           success: false,
-          error: 'Failed to transfer crypto to treasury wallet',
+          error: 'Failed to update treasury balances',
         };
       }
 
@@ -149,16 +154,18 @@ export class FinalizeCryptoSaleUseCase {
         remarks: `Crypto sale - ${quote.tokenSymbol}`
       });
 
-      // 11. Update transaction with payment details
+      // 11. Update transaction with payment details and mark as completed
+      // For sell crypto, this is a start-to-finish transaction
       await this.walletRepository.updateTransactionPaymentDetails(transactionId, {
-        status: 'processing',
-        originatorConversationId: mpesaResult.OriginatorConversationID || undefined
+        status: 'completed',
+        originatorConversationId: mpesaResult.OriginatorConversationID || undefined,
+        mpesaReceiptNumber: mpesaResult.OriginatorConversationID || undefined
       });
 
       // 12. Send notification SMS
       await this.notificationService.sendSMSOTP(
         request.phoneNumber,
-        `Your ${quote.tokenSymbol} sale of ${quote.quantity} for ${quote.fiatAmount} ${quote.userCurrency} has been completed successfully. M-Pesa payment will be processed shortly.`,
+        `Your ${quote.tokenSymbol} sale of ${quote.quantity} for ${quote.fiatAmount} ${quote.userCurrency} has been completed successfully. M-Pesa payment: ${mpesaResult.OriginatorConversationID || 'Processing'}`,
         300
       );
 
@@ -226,66 +233,88 @@ export class FinalizeCryptoSaleUseCase {
     return fiatAmount * 0.01;
   }
 
-  private async transferToTreasuryWallet(
-    tokenSymbol: string, 
-    quantity: number, 
-    fromAddress: string
-  ): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  private async updateTreasuryBalances(
+    transactionId: string,
+    transactionType: 'ON_RAMP' | 'OFF_RAMP',
+    tokenSymbol: string,
+    quantity: number,
+    fiatAmount: number,
+    userCurrency: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get treasury wallet address for this token
-      const treasuryAddress = this.getTreasuryWalletAddress(tokenSymbol);
-      if (!treasuryAddress) {
-        throw new Error(`No treasury wallet configured for ${tokenSymbol}`);
+      const movements = [];
+
+      if (transactionType === 'ON_RAMP') {
+        // Buy crypto: User pays fiat, receives crypto
+        movements.push(
+          {
+            accountType: 'FIAT' as const,
+            assetSymbol: userCurrency,
+            amount: fiatAmount, // Positive = credit to treasury (user paid)
+            description: `Crypto purchase - ${fiatAmount} ${userCurrency} from user`
+          },
+          {
+            accountType: 'CRYPTO' as const,
+            assetSymbol: tokenSymbol,
+            amount: -quantity, // Negative = debit from treasury (user received)
+            description: `Crypto purchase - ${quantity} ${tokenSymbol} to user`
+          }
+        );
+      } else {
+        // Sell crypto: User sells crypto, receives fiat
+        movements.push(
+          {
+            accountType: 'CRYPTO' as const,
+            assetSymbol: tokenSymbol,
+            amount: quantity, // Positive = credit to treasury (user sold)
+            description: `Crypto sale - ${quantity} ${tokenSymbol} from user`
+          },
+          {
+            accountType: 'FIAT' as const,
+            assetSymbol: userCurrency,
+            amount: -fiatAmount, // Negative = debit from treasury (user received)
+            description: `Crypto sale - ${fiatAmount} ${userCurrency} to user`
+          }
+        );
       }
 
-      // For now, we'll simulate the transfer
-      // In a real implementation, this would:
-      // 1. Get the wallet's private key from vault
-      // 2. Create and sign a transaction
-      // 3. Broadcast to the blockchain
-      // 4. Wait for confirmation
-
-      logger.info('Simulating crypto transfer to treasury', {
-        tokenSymbol,
-        quantity,
-        fromAddress,
-        toAddress: treasuryAddress
+      // Process treasury transaction asynchronously
+      await this.treasuryService.processTransaction({
+        userTransactionId: transactionId,
+        transactionType,
+        movements
       });
 
-      // Simulate a successful transfer
+      logger.info('Treasury balances updated for crypto transaction', {
+        transactionId,
+        transactionType,
+        tokenSymbol,
+        quantity,
+        fiatAmount,
+        userCurrency
+      });
+
       return {
-        success: true,
-        txHash: `0x${Math.random().toString(16).substr(2, 64)}`
+        success: true
       };
 
     } catch (error) {
-      logger.error('Failed to transfer to treasury wallet', {
+      logger.error('Failed to update treasury balances', {
+        transactionId,
+        transactionType,
         tokenSymbol,
         quantity,
-        fromAddress,
+        fiatAmount,
+        userCurrency,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Transfer failed'
+        error: error instanceof Error ? error.message : 'Treasury update failed'
       };
     }
   }
 
-  private getTreasuryWalletAddress(tokenSymbol: string): string | null {
-    // Get treasury wallet addresses from environment variables
-    const treasuryWallets: Record<string, string> = {
-      'BTC': process.env['TREASURY_WALLET_BTC'] || '',
-      'ETH': process.env['TREASURY_WALLET_ETH'] || '',
-      'ADA': process.env['TREASURY_WALLET_ADA'] || '',
-      'SOL': process.env['TREASURY_WALLET_SOL'] || '',
-      'USDT': process.env['TREASURY_WALLET_USDT'] || '',
-      'USDC': process.env['TREASURY_WALLET_USDC'] || ''
-    };
-
-    const address = treasuryWallets[tokenSymbol.toUpperCase()];
-    return address || null;
-  }
 
 }

@@ -375,7 +375,8 @@ export class Container {
         this.services.get('WalletRepository'),
         this.services.get('UserRepository'),
         this.services.get('TokenRepository'),
-        this.services.get('NotificationService')
+        this.services.get('NotificationService'),
+        this.services.get('TreasuryService')
       ));
     }
 
@@ -404,7 +405,8 @@ export class Container {
         this.services.get('WalletRepository'),
         this.services.get('UserRepository'),
         this.services.get('TokenRepository'),
-        this.services.get('NotificationService')
+        this.services.get('NotificationService'),
+        this.services.get('TreasuryService')
       ));
     }
 
@@ -432,6 +434,7 @@ export class Container {
       vaultService: this.get<VaultService>('VaultService'),
       notificationService: this.get<NotificationService>('NotificationService'),
       cryptoService: this.get<CryptoService>('CryptoService'),
+      paymentService: this.get<MpesaPaymentService>('PaymentService'),
       treasuryService: this.get<TreasuryService>('TreasuryService'),
     };
   }

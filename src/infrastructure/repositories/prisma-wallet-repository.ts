@@ -168,6 +168,7 @@ export class PrismaWalletRepository implements WalletRepository {
     cryptoAmount: number;
     phoneNumber: string;
     status: string;
+    transactionType: string;
   } | null> {
     const transaction = await this.prisma.transaction.findFirst({
       where: { checkoutRequestId },
@@ -187,6 +188,7 @@ export class PrismaWalletRepository implements WalletRepository {
       cryptoAmount: transaction.cryptoAmount,
       phoneNumber: transaction.phoneNumber,
       status: transaction.status,
+      transactionType: transaction.transactionType || 'ON_RAMP',
     };
   }
 

@@ -9,6 +9,7 @@ import { WalletRepository } from '../repositories/wallet-repository';
 import { UserRepository } from '../repositories/user-repository';
 import { TokenRepository } from '../repositories/token-repository';
 import { NotificationService } from '../../application/interfaces/notification-service';
+import { TreasuryService } from '../../application/interfaces/treasury-service';
 import { MpesaPaymentService } from '../../infrastructure/services/mpesa/mpesa-payment-service';
 import logger from '../../shared/logging';
 
@@ -41,7 +42,8 @@ export class FinalizeCryptoPurchaseUseCase {
     private walletRepository: WalletRepository,
     private userRepository: UserRepository,
     private tokenRepository: TokenRepository,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private treasuryService: TreasuryService
   ) {
     this.mpesaService = new MpesaPaymentService();
   }
@@ -199,6 +201,93 @@ export class FinalizeCryptoPurchaseUseCase {
   private calculatePlatformFee(fiatAmount: number): number {
     // 1% platform fee for purchases
     return Math.round(fiatAmount * 0.01 * 100) / 100;
+  }
+
+  /**
+   * Update treasury balances for crypto transactions
+   * Handles both buy (ON_RAMP) and sell (OFF_RAMP) transactions
+   */
+  async updateTreasuryBalances(
+    transactionId: string,
+    transactionType: 'ON_RAMP' | 'OFF_RAMP',
+    tokenSymbol: string,
+    quantity: number,
+    fiatAmount: number,
+    userCurrency: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const movements = [];
+
+      if (transactionType === 'ON_RAMP') {
+        // Buy crypto: User pays fiat, receives crypto
+        movements.push(
+          {
+            accountType: 'FIAT' as const,
+            assetSymbol: userCurrency,
+            amount: fiatAmount, // Positive = credit to treasury (user paid)
+            description: `Crypto purchase - ${fiatAmount} ${userCurrency} from user`
+          },
+          {
+            accountType: 'CRYPTO' as const,
+            assetSymbol: tokenSymbol,
+            amount: -quantity, // Negative = debit from treasury (user received)
+            description: `Crypto purchase - ${quantity} ${tokenSymbol} to user`
+          }
+        );
+      } else {
+        // Sell crypto: User sells crypto, receives fiat
+        movements.push(
+          {
+            accountType: 'CRYPTO' as const,
+            assetSymbol: tokenSymbol,
+            amount: quantity, // Positive = credit to treasury (user sold)
+            description: `Crypto sale - ${quantity} ${tokenSymbol} from user`
+          },
+          {
+            accountType: 'FIAT' as const,
+            assetSymbol: userCurrency,
+            amount: -fiatAmount, // Negative = debit from treasury (user received)
+            description: `Crypto sale - ${fiatAmount} ${userCurrency} to user`
+          }
+        );
+      }
+
+      // Process treasury transaction asynchronously
+      await this.treasuryService.processTransaction({
+        userTransactionId: transactionId,
+        transactionType,
+        movements
+      });
+
+      logger.info('Treasury balances updated for crypto transaction', {
+        transactionId,
+        transactionType,
+        tokenSymbol,
+        quantity,
+        fiatAmount,
+        userCurrency
+      });
+
+      return {
+        success: true
+      };
+
+    } catch (error) {
+      logger.error('Failed to update treasury balances', {
+        transactionId,
+        transactionType,
+        tokenSymbol,
+        quantity,
+        fiatAmount,
+        userCurrency,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Treasury update failed'
+      };
+    }
   }
 
 }

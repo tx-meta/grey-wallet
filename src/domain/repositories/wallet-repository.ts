@@ -41,6 +41,7 @@ export interface WalletRepository {
     cryptoAmount: number;
     phoneNumber: string;
     status: string;
+    transactionType: string;
   } | null>;
   
   updateTransactionStatus(transactionId: string, status: string): Promise<void>;

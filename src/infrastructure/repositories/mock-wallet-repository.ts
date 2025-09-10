@@ -93,6 +93,7 @@ export class MockWalletRepository implements WalletRepository {
     cryptoAmount: number;
     phoneNumber: string;
     status: string;
+    transactionType: string;
   } | null> {
     // In a real implementation, this would query the database
     // For mock purposes, return null
