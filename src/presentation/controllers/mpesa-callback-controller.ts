@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { MpesaPaymentService } from '../../infrastructure/services/mpesa/mpesa-payment-service';
 import { WalletRepository } from '../../domain/repositories/wallet-repository';
 import { NotificationService } from '../../application/interfaces/notification-service';
+import { PrismaClient } from '@prisma/client';
 import logger from '../../shared/logging';
 
 export class MpesaCallbackController {
@@ -14,14 +15,15 @@ export class MpesaCallbackController {
 
   constructor(
     private walletRepository: WalletRepository,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private prisma: PrismaClient
   ) {
     this.mpesaService = new MpesaPaymentService();
   }
 
   /**
    * POST /api/mpesa/callback/stk-push
-   * Handle STK Push callback (for buy crypto)
+   * Handle STK Push callback (for buy crypto) - ATOMIC TRANSACTION
    */
   async handleSTKPushCallback(req: Request, res: Response): Promise<void> {
     try {
@@ -38,27 +40,198 @@ export class MpesaCallbackController {
         const transaction = await this.walletRepository.findTransactionByCheckoutRequestId(result.transactionId!);
         
         if (transaction) {
-          // Update transaction status to completed
-          await this.walletRepository.updateTransactionStatus(transaction.id, 'completed');
-          
-          // Update transaction with M-Pesa details
-          await this.walletRepository.updateTransactionPaymentDetails(transaction.id, {
-            status: 'completed',
-            mpesaReceiptNumber: result.mpesaReceiptNumber || undefined,
-            transactionDate: result.transactionDate || undefined,
-            amount: result.amount || undefined
+          logger.info('Processing STK Push callback for transaction', {
+            transactionId: transaction.id,
+            transactionType: transaction.transactionType,
+            fiatAmount: transaction.fiatAmount,
+            cryptoAmount: transaction.cryptoAmount,
+            tokenSymbol: transaction.tokenSymbol
           });
 
-          // Add crypto to user's wallet
-          if (transaction.transactionType === 'ON_RAMP') {
-            await this.walletRepository.updateUserTokenBalance(
-              transaction.userId,
-              transaction.tokenSymbol,
-              transaction.cryptoAmount
-            );
-          }
+          // ATOMIC TRANSACTION: All database operations in a single transaction
+          // Increased timeout to 30 seconds for complex operations
+          await this.prisma.$transaction(async (tx) => {
+            try {
+              // 1. Update transaction status to completed
+              logger.debug('Step 1: Updating transaction status to completed');
+              await tx.transaction.update({
+                where: { transactionId: transaction.id },
+                data: { status: 'completed' }
+              });
+              
+              // 2. Update transaction with M-Pesa details
+              logger.debug('Step 2: Updating transaction with M-Pesa details');
+              const updateData: any = {};
+              if (result.mpesaReceiptNumber) {
+                updateData.mpesaReceiptNumber = result.mpesaReceiptNumber;
+              }
+              if (result.transactionDate) {
+                updateData.transactionDate = new Date(result.transactionDate);
+              }
+              if (result.amount) {
+                updateData.amount = result.amount;
+              }
+              
+              if (Object.keys(updateData).length > 0) {
+                await tx.transaction.update({
+                  where: { transactionId: transaction.id },
+                  data: updateData
+                });
+              }
 
-          // Send success notification
+              // 3. Add crypto to user's wallet (if ON_RAMP)
+              if (transaction.transactionType === 'ON_RAMP') {
+                logger.debug('Step 3: Processing ON_RAMP transaction - updating user wallet');
+                
+                // Validate required amounts
+                const fiatAmount = transaction.fiatAmount || 0;
+                const cryptoAmount = transaction.cryptoAmount || 0;
+                
+                if (fiatAmount <= 0 || cryptoAmount <= 0) {
+                  throw new Error(`Invalid transaction amounts: fiatAmount=${fiatAmount}, cryptoAmount=${cryptoAmount}`);
+                }
+
+                // Update user token balance
+                logger.debug('Step 3a: Updating user token balance', { 
+                  userId: transaction.userId, 
+                  tokenSymbol: transaction.tokenSymbol, 
+                  increment: cryptoAmount 
+                });
+                
+                const userAddressUpdate = await tx.userAddress.updateMany({
+                  where: {
+                    userId: transaction.userId,
+                    wallet: {
+                      tokenSymbol: transaction.tokenSymbol,
+                    },
+                  },
+                  data: {
+                    tokenBalance: {
+                      increment: cryptoAmount,
+                    },
+                  },
+                });
+
+                if (userAddressUpdate.count === 0) {
+                  logger.warn('No user address found for token balance update', {
+                    userId: transaction.userId,
+                    tokenSymbol: transaction.tokenSymbol
+                  });
+                }
+
+                // 4. Update treasury balances atomically
+                logger.debug('Step 4: Updating treasury balances');
+                
+                // Get or create FIAT treasury account
+                const fiatAccount = await tx.treasuryAccount.upsert({
+                  where: { 
+                    accountType_assetSymbol: { 
+                      accountType: 'FIAT', 
+                      assetSymbol: 'KES' 
+                    } 
+                  },
+                  create: { 
+                    accountType: 'FIAT', 
+                    assetSymbol: 'KES', 
+                    balance: fiatAmount
+                  },
+                  update: {
+                    balance: {
+                      increment: fiatAmount
+                    }
+                  }
+                });
+
+                const fiatBalanceBefore = Number(fiatAccount.balance) - fiatAmount;
+                const fiatBalanceAfter = Number(fiatAccount.balance);
+
+                logger.debug('FIAT treasury updated', {
+                  accountId: fiatAccount.id,
+                  balanceBefore: fiatBalanceBefore,
+                  balanceAfter: fiatBalanceAfter,
+                  increment: fiatAmount
+                });
+
+                // Get or create CRYPTO treasury account
+                const cryptoAccount = await tx.treasuryAccount.upsert({
+                  where: { 
+                    accountType_assetSymbol: { 
+                      accountType: 'CRYPTO', 
+                      assetSymbol: transaction.tokenSymbol 
+                    } 
+                  },
+                  create: { 
+                    accountType: 'CRYPTO', 
+                    assetSymbol: transaction.tokenSymbol, 
+                    balance: -cryptoAmount // Negative because we're giving crypto
+                  },
+                  update: {
+                    balance: {
+                      decrement: cryptoAmount
+                    }
+                  }
+                });
+
+                const cryptoBalanceBefore = Number(cryptoAccount.balance) + cryptoAmount;
+                const cryptoBalanceAfter = Number(cryptoAccount.balance);
+
+                logger.debug('CRYPTO treasury updated', {
+                  accountId: cryptoAccount.id,
+                  balanceBefore: cryptoBalanceBefore,
+                  balanceAfter: cryptoBalanceAfter,
+                  decrement: cryptoAmount
+                });
+
+                // 5. Create treasury transaction records
+                logger.debug('Step 5: Creating treasury transaction records');
+                
+                await tx.treasuryTransaction.createMany({
+                  data: [
+                    {
+                      userTransactionId: transaction.id,
+                      treasuryAccountId: fiatAccount.id,
+                      transactionType: 'ON_RAMP',
+                      amount: fiatAmount,
+                      balanceBefore: fiatBalanceBefore,
+                      balanceAfter: fiatBalanceAfter,
+                      description: `Fiat received from STK Push - ${transaction.tokenSymbol} purchase`
+                    },
+                    {
+                      userTransactionId: transaction.id,
+                      treasuryAccountId: cryptoAccount.id,
+                      transactionType: 'ON_RAMP',
+                      amount: -cryptoAmount,
+                      balanceBefore: cryptoBalanceBefore,
+                      balanceAfter: cryptoBalanceAfter,
+                      description: `Crypto distributed to user - ${transaction.tokenSymbol} purchase`
+                    }
+                  ]
+                });
+
+                logger.info('Atomic transaction completed successfully', {
+                  transactionId: transaction.id,
+                  fiatAmount,
+                  cryptoAmount,
+                  tokenSymbol: transaction.tokenSymbol,
+                  fiatTreasuryBalance: fiatBalanceAfter,
+                  cryptoTreasuryBalance: cryptoBalanceAfter
+                });
+              } else {
+                logger.info('Non-ON_RAMP transaction, skipping wallet and treasury updates', {
+                  transactionType: transaction.transactionType
+                });
+              }
+            } catch (error) {
+              logger.error('Error within atomic transaction', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                transactionId: transaction.id,
+                stack: error instanceof Error ? error.stack : undefined
+              });
+              throw error; // Re-throw to trigger transaction rollback
+            }
+          });
+
+          // Send success notification (outside transaction for performance)
           await this.notificationService.sendNotification({
             userId: transaction.userId,
             type: 'transaction_completed',
@@ -72,10 +245,13 @@ export class MpesaCallbackController {
             }
           });
 
-          logger.info('STK Push transaction completed successfully', {
+          logger.info('STK Push transaction completed successfully with atomic treasury updates', {
             transactionId: transaction.id,
             mpesaReceiptNumber: result.mpesaReceiptNumber,
-            amount: result.amount
+            amount: result.amount,
+            fiatAmount: transaction.fiatAmount,
+            cryptoAmount: transaction.cryptoAmount,
+            tokenSymbol: transaction.tokenSymbol
           });
         } else {
           logger.warn('Transaction not found for STK Push callback', {

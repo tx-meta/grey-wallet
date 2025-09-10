@@ -11,23 +11,23 @@ Content-Type: application/json
 {
   "Body": {
     "stkCallback": {
-      "MerchantRequestID": "a523-4af8-988b-08349bd2d49420560582",
-      "CheckoutRequestID": "ws_CO_090920252333444726367035",
+      "MerchantRequestID": "a6a0-4b48-8eb8-c277f58f21ed1186218",
+      "CheckoutRequestID": "ws_CO_100920250954468726367035",
       "ResultCode": 0,
       "ResultDesc": "The service request is processed successfully.",
       "CallbackMetadata": {
         "Item": [
           {
             "Name": "Amount",
-            "Value": 10.1
+            "Value": 10
           },
           {
             "Name": "MpesaReceiptNumber",
-            "Value": "TI977HIVW7"
+            "Value": "TIA48GVX56"
           },
           {
             "Name": "TransactionDate",
-            "Value": "202509092333444"
+            "Value":"2025-09-10 11:46:55" 
           },
           {
             "Name": "PhoneNumber",

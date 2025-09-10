@@ -27,7 +27,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "otp": "903611"
+  "otp": "938374"
 }
 
 ### 4. Try to verify with invalid OTP

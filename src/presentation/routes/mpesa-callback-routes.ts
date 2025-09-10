@@ -6,11 +6,13 @@
 import { Router } from 'express';
 import { container } from '../../infrastructure/container';
 import { MpesaCallbackController } from '../controllers/mpesa-callback-controller';
+import prisma from '../../infrastructure/database/prisma-client';
 
 // Get M-Pesa callback controller from dependency injection container
 const mpesaCallbackController = new MpesaCallbackController(
   container.getRepositories().walletRepository,
-  container.getServices().notificationService
+  container.getServices().notificationService,
+  prisma
 );
 
 const router = Router();
