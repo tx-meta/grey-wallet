@@ -3,7 +3,13 @@
  * Real M-Pesa integration using Safaricom Daraja API
  */
 
-import { PaymentService, MpesaPaymentRequest, MpesaPaymentResponse } from '../../application/interfaces/payment-service';
+import { 
+  PaymentService, 
+  MpesaPaymentRequest, 
+  MpesaPaymentResponse,
+  MpesaPayoutRequest,
+  MpesaPayoutResponse
+} from '../../application/interfaces/payment-service';
 import logger from '../../shared/logging';
 
 interface DarajaConfig {
@@ -316,5 +322,59 @@ export class MpesaPaymentService implements PaymentService {
   private generatePassword(timestamp: string): string {
     const str = this.config.businessShortCode + this.config.passkey + timestamp;
     return Buffer.from(str).toString('base64');
+  }
+
+  async initiateMpesaPayout(request: MpesaPayoutRequest): Promise<MpesaPayoutResponse> {
+    try {
+      // For now, simulate M-Pesa B2C payout
+      // In a real implementation, this would use the M-Pesa B2C API
+      logger.info('Simulating M-Pesa payout', {
+        amount: request.amount,
+        phoneNumber: request.phoneNumber.replace(/\d(?=\d{4})/g, '*'),
+        accountReference: request.accountReference
+      });
+
+      return {
+        success: true,
+        transactionId: `payout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        conversationId: `conv_${Date.now()}`,
+        originatorConversationId: `orig_${Date.now()}`
+      };
+    } catch (error) {
+      logger.error('M-Pesa payout failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        phoneNumber: request.phoneNumber.replace(/\d(?=\d{4})/g, '*'),
+        amount: request.amount
+      });
+
+      return {
+        success: false,
+        error: 'Failed to initiate M-Pesa payout'
+      };
+    }
+  }
+
+  async verifyMpesaPayout(transactionId: string): Promise<{ success: boolean; status: string; error?: string }> {
+    try {
+      // For now, simulate payout verification
+      // In a real implementation, this would query the M-Pesa API for transaction status
+      logger.info('Simulating M-Pesa payout verification', { transactionId });
+
+      return {
+        success: true,
+        status: 'completed'
+      };
+    } catch (error) {
+      logger.error('M-Pesa payout verification failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        transactionId
+      });
+
+      return {
+        success: false,
+        status: 'failed',
+        error: 'Failed to verify M-Pesa payout'
+      };
+    }
   }
 } 

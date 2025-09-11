@@ -1,0 +1,222 @@
+### M-Pesa Callback Tests
+### Test file for M-Pesa payment callbacks (STK Push and B2C)
+
+### Variables
+@baseUrl = http://localhost:3000
+
+### 1. STK Push Callback - Success (Buy Crypto)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "a6a0-4b48-8eb8-c277f58f21ed1186218",
+      "CheckoutRequestID": "ws_CO_100920250954468726367035",
+      "ResultCode": 0,
+      "ResultDesc": "The service request is processed successfully.",
+      "CallbackMetadata": {
+        "Item": [
+          {
+            "Name": "Amount",
+            "Value": 10
+          },
+          {
+            "Name": "MpesaReceiptNumber",
+            "Value": "TIA48GVX56"
+          },
+          {
+            "Name": "TransactionDate",
+            "Value":"2025-09-10 11:46:55" 
+          },
+          {
+            "Name": "PhoneNumber",
+            "Value": "254726367035"
+          }
+        ]
+      }
+    }
+  }
+}
+
+### 2. STK Push Callback - Failed (Buy Crypto)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789",
+      "CheckoutRequestID": "ws_CO_123456789",
+      "ResultCode": 1,
+      "ResultDesc": "The balance is insufficient for the transaction."
+    }
+  }
+}
+
+### 3. STK Push Callback - User Cancelled (Buy Crypto)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789",
+      "CheckoutRequestID": "ws_CO_123456789",
+      "ResultCode": 1032,
+      "ResultDesc": "Request cancelled by user"
+    }
+  }
+}
+
+### 4. STK Push Callback - Timeout (Buy Crypto)
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789",
+      "CheckoutRequestID": "ws_CO_123456789",
+      "ResultCode": 1031,
+      "ResultDesc": "Request cancelled due to timeout"
+    }
+  }
+}
+
+### 5. B2C Callback - Success (Sell Crypto Disbursement)
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "transaction_123456789",
+    "ConversationID": "AG_20241230_123456789",
+    "TransactionID": "QK123456789",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionAmount",
+          "Value": 50000
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "QK123456789"
+        },
+        {
+          "Key": "B2CRecipientIsRegisteredCustomer",
+          "Value": "Y"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": 100000
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "254700000000 - John Doe"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "30.12.2024 12:34:56"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": 100000
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": 100000
+        }
+      ]
+    },
+    "ReferenceData": {
+      "ReferenceItem": {
+        "Key": "QueueTimeoutURL",
+        "Value": "https://your-domain.com/api/mpesa/callback/b2c"
+      }
+    }
+  }
+}
+
+### 6. B2C Callback - Failed (Sell Crypto Disbursement)
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "transaction_123456789",
+    "ConversationID": "AG_20241230_123456789"
+  }
+}
+
+### 7. B2C Callback - Invalid Phone Number (Sell Crypto Disbursement)
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "Invalid phone number format.",
+    "OriginatorConversationID": "transaction_123456789",
+    "ConversationID": "AG_20241230_123456789"
+  }
+}
+
+### 8. B2C Callback - Account Not Found (Sell Crypto Disbursement)
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "Unable to lock subscriber.",
+    "OriginatorConversationID": "transaction_123456789",
+    "ConversationID": "AG_20241230_123456789"
+  }
+}
+
+### 9. Test Invalid JSON Format - STK Push
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "invalid": "json"
+}
+
+### 10. Test Invalid JSON Format - B2C
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "invalid": "json"
+}
+
+### 11. Test Missing Required Fields - STK Push
+POST {{baseUrl}}/api/mpesa/callback/stk-push
+Content-Type: application/json
+
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "ws_CO_123456789"
+    }
+  }
+}
+
+### 12. Test Missing Required Fields - B2C
+POST {{baseUrl}}/api/mpesa/callback/b2c
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0
+  }
+}

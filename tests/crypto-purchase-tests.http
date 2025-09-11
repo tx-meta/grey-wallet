@@ -1,20 +1,17 @@
 ### Crypto Purchase Tests
 
 # Variables
-@baseUrl = http://localhost:3000
-@authToken = {{login.response.body.accessToken}}
-@refreshToken = {{login.response.body.refreshToken}}
-@currentUserId = {{login.response.body.user.id}}
-@transactionId = d6506aa0-8197-4bb0-aaa2-3929d2267e9f 
 
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.data.session.accessToken}}
 ### 1. Login to get authentication token
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "harunm28@gmail.com",
-  "password": "TestPassword123!"
+  "email": "test2@example.com",
+  "password": "SecurePass123"
 }
 
 ### 2. Initiate Crypto Purchase (BTC)

@@ -35,6 +35,22 @@ export class MockNotificationService implements NotificationService {
     logger.info('Mock notification: welcome SMS sent', { phone, userName });
   }
 
+  async sendNotification(notification: {
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }): Promise<void> {
+    logger.info('Mock notification: general notification sent', {
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      data: notification.data
+    });
+  }
+
   async isHealthy(): Promise<boolean> {
     return true;
   }

@@ -15,6 +15,15 @@ export interface NotificationService {
   sendSMSWelcome(phone: string, userName: string): Promise<void>;
   sendSMSOTP(phone: string, otp: string, expiresIn: number): Promise<{ success: boolean; error?: string; messageId?: string }>;
 
+  // General notifications
+  sendNotification(notification: {
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }): Promise<void>;
+
   // Health check
   isHealthy(): Promise<boolean>;
 } 

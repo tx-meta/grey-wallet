@@ -4,7 +4,6 @@
  */
 
 import { Request, Response } from 'express';
-import { InitiateCryptoPurchaseUseCase } from '../../domain/use_cases/initiate-crypto-purchase';
 import { ProcessPaymentCallbackUseCase } from '../../domain/use_cases/process-payment-callback';
 import { GetTransactionStatusUseCase } from '../../domain/use_cases/get-transaction-status';
 import { processCallbackData, detectCallbackType } from '../../shared/utils/callback-formatter';
@@ -12,14 +11,14 @@ import logger from '../../shared/logging';
 
 export class PaymentController {
   constructor(
-    private initiateCryptoPurchaseUseCase: InitiateCryptoPurchaseUseCase,
     private processPaymentCallbackUseCase: ProcessPaymentCallbackUseCase,
     private getTransactionStatusUseCase: GetTransactionStatusUseCase
   ) {}
 
   /**
    * POST /api/payments/crypto/purchase
-   * Initiate crypto purchase via M-Pesa
+   * DEPRECATED: Use the new buy crypto quote endpoints instead
+   * Redirects to new buy crypto pattern
    */
   async initiateCryptoPurchase(req: Request, res: Response): Promise<void> {
     try {
@@ -32,7 +31,7 @@ export class PaymentController {
         return;
       }
 
-      const { tokenSymbol, fiatAmount, phoneNumber } = req.body;
+      const { tokenSymbol, fiatAmount, phoneNumber, userCurrency = 'KES' } = req.body;
 
       if (!tokenSymbol || !fiatAmount || !phoneNumber) {
         res.status(400).json({
@@ -42,36 +41,48 @@ export class PaymentController {
         return;
       }
 
-      logger.info('Crypto purchase request received', { 
+      logger.warn('Deprecated crypto purchase endpoint used', { 
         userId, 
         tokenSymbol, 
         fiatAmount, 
-        phoneNumber 
+        phoneNumber,
+        message: 'This endpoint is deprecated. Please use the new buy crypto quote endpoints.'
       });
 
-      const result = await this.initiateCryptoPurchaseUseCase.execute({
-        userId,
-        tokenSymbol,
-        fiatAmount,
-        phoneNumber
-      });
-
-      if (!result.success) {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-        });
-        return;
-      }
-
-      logger.info('Crypto purchase initiated successfully', { 
-        userId, 
-        transactionId: result.data?.transactionId 
-      });
-
-      res.status(200).json({
-        success: true,
-        data: result.data,
+      // Redirect to new buy crypto pattern
+      res.status(301).json({
+        success: false,
+        message: 'This endpoint is deprecated. Please use the new buy crypto quote endpoints.',
+        migration: {
+          oldEndpoint: '/api/payments/crypto/purchase',
+          newEndpoints: {
+            getQuote: '/api/buy/crypto/fiat-to-quantity-quote',
+            finalize: '/api/buy/crypto/finalize'
+          },
+          steps: [
+            '1. First, get a quote using POST /api/buy/crypto/fiat-to-quantity-quote',
+            '2. Then, finalize the purchase using POST /api/buy/crypto/finalize with the quoteId'
+          ],
+          example: {
+            step1: {
+              method: 'POST',
+              url: '/api/buy/crypto/fiat-to-quantity-quote',
+              body: {
+                tokenSymbol,
+                fiatAmount,
+                userCurrency
+              }
+            },
+            step2: {
+              method: 'POST',
+              url: '/api/buy/crypto/finalize',
+              body: {
+                quoteId: 'from_step_1_response',
+                phoneNumber
+              }
+            }
+          }
+        }
       });
     } catch (error) {
       logger.error('Crypto purchase error', { 

@@ -42,6 +42,10 @@ import { SendPhoneOTPUseCase } from '../domain/use_cases/send-phone-otp';
 import { VerifyPhoneOTPUseCase } from '../domain/use_cases/verify-phone-otp';
 import { GetTermsOfServiceUseCase } from '../domain/use_cases/get-terms-of-service';
 import { GetCryptoQuoteUseCase } from '../domain/use_cases/get-crypto-quote';
+import { GetSellCryptoQuoteUseCase } from '../domain/use_cases/get-sell-crypto-quote';
+import { FinalizeCryptoSaleUseCase } from '../domain/use_cases/finalize-crypto-sale';
+import { GetBuyCryptoQuoteUseCase } from '../domain/use_cases/get-buy-crypto-quote';
+import { FinalizeCryptoPurchaseUseCase } from '../domain/use_cases/finalize-crypto-purchase';
 import { DeleteUserAccountUseCase } from '../domain/use_cases/delete-user-account';
 
 // Import controllers
@@ -51,6 +55,8 @@ import { PhoneVerificationController } from '../presentation/controllers/phone-v
 import { PaymentController } from '../presentation/controllers/payment-controller';
 import { TermsController } from '../presentation/controllers/terms-controller';
 import { CryptoQuoteController } from '../presentation/controllers/crypto-quote-controller';
+import { SellCryptoController } from '../presentation/controllers/sell-crypto-controller';
+import { BuyCryptoController } from '../presentation/controllers/buy-crypto-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -327,7 +333,6 @@ export class Container {
 
     if (!this.services.has('PaymentController')) {
       this.services.set('PaymentController', new PaymentController(
-        this.services.get('InitiateCryptoPurchaseUseCase'),
         this.services.get('ProcessPaymentCallbackUseCase'),
         this.services.get('GetTransactionStatusUseCase')
       ));
@@ -354,6 +359,67 @@ export class Container {
     return this.get<CryptoQuoteController>('CryptoQuoteController');
   }
 
+  public getSellCryptoController(): SellCryptoController {
+    // Initialize sell crypto use cases if not already done
+    if (!this.services.has('GetSellCryptoQuoteUseCase')) {
+      this.services.set('GetSellCryptoQuoteUseCase', new GetSellCryptoQuoteUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('TokenRepository'),
+        this.services.get('WalletRepository')
+      ));
+    }
+
+    if (!this.services.has('FinalizeCryptoSaleUseCase')) {
+      this.services.set('FinalizeCryptoSaleUseCase', new FinalizeCryptoSaleUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('WalletRepository'),
+        this.services.get('UserRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('NotificationService'),
+        this.services.get('TreasuryService')
+      ));
+    }
+
+    if (!this.services.has('SellCryptoController')) {
+      this.services.set('SellCryptoController', new SellCryptoController(
+        this.services.get('GetSellCryptoQuoteUseCase'),
+        this.services.get('FinalizeCryptoSaleUseCase')
+      ));
+    }
+
+    return this.get<SellCryptoController>('SellCryptoController');
+  }
+
+  public getBuyCryptoController(): BuyCryptoController {
+    // Initialize buy crypto use cases if not already done
+    if (!this.services.has('GetBuyCryptoQuoteUseCase')) {
+      this.services.set('GetBuyCryptoQuoteUseCase', new GetBuyCryptoQuoteUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('TokenRepository')
+      ));
+    }
+
+    if (!this.services.has('FinalizeCryptoPurchaseUseCase')) {
+      this.services.set('FinalizeCryptoPurchaseUseCase', new FinalizeCryptoPurchaseUseCase(
+        this.services.get('CryptoQuoteService'),
+        this.services.get('WalletRepository'),
+        this.services.get('UserRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('NotificationService'),
+        this.services.get('TreasuryService')
+      ));
+    }
+
+    if (!this.services.has('BuyCryptoController')) {
+      this.services.set('BuyCryptoController', new BuyCryptoController(
+        this.services.get('GetBuyCryptoQuoteUseCase'),
+        this.services.get('FinalizeCryptoPurchaseUseCase')
+      ));
+    }
+
+    return this.get<BuyCryptoController>('BuyCryptoController');
+  }
+
   public getRepositories() {
     return {
       userRepository: this.get<UserRepository>('UserRepository'),
@@ -368,18 +434,30 @@ export class Container {
       vaultService: this.get<VaultService>('VaultService'),
       notificationService: this.get<NotificationService>('NotificationService'),
       cryptoService: this.get<CryptoService>('CryptoService'),
+      paymentService: this.get<MpesaPaymentService>('PaymentService'),
       treasuryService: this.get<TreasuryService>('TreasuryService'),
     };
   }
 }
 
 // Export singleton instance
-
-// Export singleton instance
 const containerInstance = Container.getInstance();
 
+// Export the container with getters for easy access
 export default {
+  // Repositories
+  get userRepository() { return containerInstance.get('UserRepository'); },
+  get walletRepository() { return containerInstance.get('WalletRepository'); },
+  get tokenRepository() { return containerInstance.get('TokenRepository'); },
+  get termsOfServiceRepository() { return containerInstance.get('TermsOfServiceRepository'); },
+  
   // Services
+  get vaultService() { return containerInstance.get('VaultService'); },
+  get notificationService() { return containerInstance.get('NotificationService'); },
+  get cryptoService() { return containerInstance.get('CryptoService'); },
+  get paymentService() { return containerInstance.get('PaymentService'); },
+  get cryptoQuoteService() { return containerInstance.get('CryptoQuoteService'); },
+  get supabaseAuthService() { return containerInstance.get('SupabaseAuthService'); },
   get treasuryService() { return containerInstance.get('TreasuryService'); },
   
   // Controllers
@@ -389,6 +467,8 @@ export default {
   get paymentController() { return containerInstance.getPaymentController(); },
   get termsController() { return containerInstance.getTermsController(); },
   get cryptoQuoteController() { return containerInstance.getCryptoQuoteController(); },
+  get sellCryptoController() { return containerInstance.getSellCryptoController(); },
+  get buyCryptoController() { return containerInstance.getBuyCryptoController(); },
   
   // Middleware
   get authMiddleware() { return containerInstance.getAuthMiddleware(); }

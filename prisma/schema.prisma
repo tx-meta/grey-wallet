@@ -102,10 +102,11 @@ model Transaction {
     platformFee        Float?
     totalAmount        Float?
     phoneNumber        String?
-    checkoutRequestId  String?
-    merchantRequestId  String?
-    mpesaReceiptNumber String?
-    transactionDate    DateTime?
+    checkoutRequestId        String?
+    merchantRequestId        String?
+    originatorConversationId String?
+    mpesaReceiptNumber       String?
+    transactionDate          DateTime?
 
     // Relations
     supportedToken SupportedToken? @relation(fields: [tokenId], references: [tokenId])
