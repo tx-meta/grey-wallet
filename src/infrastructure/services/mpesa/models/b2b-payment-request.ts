@@ -71,7 +71,7 @@ export class B2BPaymentRequest extends PaymentRequest {
       SecurityCredential: this.securityCredential,
       CommandID: this.commandID,
       SenderIdentifierType: this.senderIdentifierType,
-      ReceiverIdentifierType: this.receiverIdentifierType,
+      RecieverIdentifierType: this.receiverIdentifierType,
       Remarks: this.remarks,
       QueueTimeOutURL: this.queueTimeOutURL,
       ResultURL: this.resultURL,
