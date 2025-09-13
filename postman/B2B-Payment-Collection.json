@@ -1,0 +1,1462 @@
+{
+	"info": {
+		"_postman_id": "b2b-payment-collection-2025",
+		"name": "B2B Payment API - Complete Collection",
+		"description": "Comprehensive collection for testing B2B payment functionality including quotes, finalization, and callbacks. This collection covers crypto-funded M-Pesa business payments with automatic treasury management.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "b2b-payment-api"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has access token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.session.accessToken).to.exist;",
+									"    ",
+									"    // Store the token for other requests",
+									"    pm.globals.set(\"jwt_token\", jsonData.data.session.accessToken);",
+									"    pm.globals.set(\"user_id\", jsonData.data.user.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"muhindi.kn@gmail.com\",\n  \"password\": \"SecurePass123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for obtaining JWT tokens"
+		},
+		{
+			"name": "B2B Payment Quotes",
+			"item": [
+				{
+					"name": "Create Paybill Quote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Quote created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.quoteId).to.exist;",
+									"    ",
+									"    // Store quote ID for finalization",
+									"    pm.globals.set(\"paybill_quote_id\", jsonData.data.quoteId);",
+									"});",
+									"",
+									"pm.test(\"Quote has required fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.tokenSymbol).to.eql(\"USDT\");",
+									"    pm.expect(jsonData.data.fiatAmount).to.eql(1000);",
+									"    pm.expect(jsonData.data.recipient.type).to.eql(\"paybill\");",
+									"    pm.expect(jsonData.data.expiresAt).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 1000,\n  \"recipientType\": \"paybill\",\n  \"businessNumber\": \"220220\",\n  \"accountNumber\": \"254726367035\",\n  \"recipientName\": \"Airtel Money Kenya\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Till Quote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Till quote created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.quoteId).to.exist;",
+									"    ",
+									"    // Store quote ID for finalization",
+									"    pm.globals.set(\"till_quote_id\", jsonData.data.quoteId);",
+									"});",
+									"",
+									"pm.test(\"Quote is for till payment\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.recipient.type).to.eql(\"till\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 500,\n  \"recipientType\": \"till\",\n  \"businessNumber\": \"567890\",\n  \"recipientName\": \"Local Shop Till\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Pochi (Phone) Quote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pochi quote created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.quoteId).to.exist;",
+									"    ",
+									"    // Store quote ID for finalization",
+									"    pm.globals.set(\"pochi_quote_id\", jsonData.data.quoteId);",
+									"});",
+									"",
+									"pm.test(\"Quote is for pochi payment\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.recipient.type).to.eql(\"pochi\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 250,\n  \"recipientType\": \"pochi\",\n  \"businessNumber\": \"0712345678\",\n  \"recipientName\": \"John Doe Phone Payment\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "B2B payment quote creation for different recipient types"
+		},
+		{
+			"name": "B2B Payment Finalization",
+			"item": [
+				{
+					"name": "Finalize Paybill Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Payment finalized successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.transactionId).to.exist;",
+									"    ",
+									"    // Store transaction details for callback testing",
+									"    pm.globals.set(\"paybill_transaction_id\", jsonData.data.transactionId);",
+									"    if (jsonData.data.mpesaResponse && jsonData.data.mpesaResponse.originatorConversationId) {",
+									"        pm.globals.set(\"paybill_originator_conversation_id\", jsonData.data.mpesaResponse.originatorConversationId);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Payment has required fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.tokenSymbol).to.exist;",
+									"    pm.expect(jsonData.data.fiatAmount).to.exist;",
+									"    pm.expect(jsonData.data.recipient).to.exist;",
+									"    pm.expect(jsonData.data.mpesaResponse).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"{{paybill_quote_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Till Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Till payment finalized successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.transactionId).to.exist;",
+									"    ",
+									"    // Store transaction details for callback testing",
+									"    pm.globals.set(\"till_transaction_id\", jsonData.data.transactionId);",
+									"    if (jsonData.data.mpesaResponse && jsonData.data.mpesaResponse.originatorConversationId) {",
+									"        pm.globals.set(\"till_originator_conversation_id\", jsonData.data.mpesaResponse.originatorConversationId);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"{{till_quote_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Pochi Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pochi payment finalized successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.transactionId).to.exist;",
+									"    ",
+									"    // Store transaction details for callback testing",
+									"    pm.globals.set(\"pochi_transaction_id\", jsonData.data.transactionId);",
+									"    if (jsonData.data.mpesaResponse && jsonData.data.mpesaResponse.originatorConversationId) {",
+									"        pm.globals.set(\"pochi_originator_conversation_id\", jsonData.data.mpesaResponse.originatorConversationId);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"{{pochi_quote_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "B2B payment finalization endpoints"
+		},
+		{
+			"name": "B2B Payment Callbacks",
+			"item": [
+				{
+					"name": "Successful Payment Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Callback processed successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ResultCode).to.eql(0);",
+									"    pm.expect(jsonData.ResultDesc).to.include(\"processed successfully\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 0,\n    \"ResultDesc\": \"The service request is processed successfully.\",\n    \"OriginatorConversationID\": \"{{paybill_originator_conversation_id}}\",\n    \"ConversationID\": \"AG_20231213_success_test\",\n    \"TransactionID\": \"NLJ7RT61SV\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"NLJ7RT61SV\"\n        },\n        {\n          \"Key\": \"TransactionAmount\",\n          \"Value\": \"1000.00\"\n        },\n        {\n          \"Key\": \"TransactionReceipt\",\n          \"Value\": \"NLJ7RT61SV\"\n        },\n        {\n          \"Key\": \"ReceiverPartyPublicName\",\n          \"Value\": \"220220 - Airtel Money Kenya\"\n        },\n        {\n          \"Key\": \"TransactionCompletedDateTime\",\n          \"Value\": \"13.12.2023 11:45:50\"\n        },\n        {\n          \"Key\": \"B2CUtilityAccountAvailableFunds\",\n          \"Value\": \"10000.00\"\n        },\n        {\n          \"Key\": \"B2CWorkingAccountAvailableFunds\",\n          \"Value\": \"900000.00\"\n        },\n        {\n          \"Key\": \"B2CReceiverAccountType\",\n          \"Value\": \"Paybill Account\"\n        }\n      ]\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"mpesa",
+								"callback",
+								"b2b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Failed Payment Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Failed callback processed successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ResultCode).to.eql(0);",
+									"    pm.expect(jsonData.ResultDesc).to.include(\"processed successfully\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 1,\n    \"ResultDesc\": \"The balance is insufficient for the transaction.\",\n    \"OriginatorConversationID\": \"{{till_originator_conversation_id}}\",\n    \"ConversationID\": \"AG_20231213_fail_test\",\n    \"TransactionID\": \"NLJ7RT61SX\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"NLJ7RT61SX\"\n        }\n      ]\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"mpesa",
+								"callback",
+								"b2b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Account Number Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Invalid account callback processed\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ResultCode).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 2,\n    \"ResultDesc\": \"Invalid Account Number\",\n    \"OriginatorConversationID\": \"TEST_INVALID_ACCOUNT\",\n    \"ConversationID\": \"AG_20231213_invalid_test\",\n    \"TransactionID\": \"NLJ7RT61SY\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"NLJ7RT61SY\"\n        }\n      ]\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"mpesa",
+								"callback",
+								"b2b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "System Error Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"System error callback processed\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ResultCode).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 1001,\n    \"ResultDesc\": \"Unable to lock subscriber, a transaction is already in process for the current subscriber\",\n    \"OriginatorConversationID\": \"TEST_SYSTEM_ERROR\",\n    \"ConversationID\": \"AG_20231213_system_error\",\n    \"TransactionID\": \"NLJ7RT61SZ\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"NLJ7RT61SZ\"\n        }\n      ]\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"mpesa",
+								"callback",
+								"b2b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Malformed Callback Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Malformed data rejected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.ResultCode).to.eql(1);",
+									"    pm.expect(jsonData.ResultDesc).to.include(\"Invalid callback data\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"InvalidStructure\": {\n    \"SomeField\": \"SomeValue\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"mpesa",
+								"callback",
+								"b2b"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "B2B payment callback webhook tests simulating M-Pesa responses"
+		},
+		{
+			"name": "Error Scenarios",
+			"item": [
+				{
+					"name": "Create Quote - Missing Fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message for missing fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Quote - Invalid Recipient Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error for invalid recipient type\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 1000,\n  \"recipientType\": \"invalid_type\",\n  \"businessNumber\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize - Invalid Quote ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error for invalid quote ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include(\"Quote not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quoteId\": \"invalid-quote-id-12345\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Authentication required error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 1000,\n  \"recipientType\": \"paybill\",\n  \"businessNumber\": \"220220\",\n  \"accountNumber\": \"254726367035\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/b2b/quote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"b2b",
+								"quote"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Error scenarios and edge cases for B2B payments"
+		},
+		{
+			"name": "Wallet & Balance",
+			"item": [
+				{
+					"name": "Check Wallet Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Balance retrieved successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.balance).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"wallet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check USDT Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"USDT balance retrieved\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.balance).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/balance/USDT",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"wallet",
+								"balance",
+								"USDT"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Wallet and balance checking endpoints"
+		},
+		{
+			"name": "Integration Tests",
+			"item": [
+				{
+					"name": "Complete Success Flow",
+					"item": [
+						{
+							"name": "1. Create Integration Quote",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Integration quote created\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"    pm.globals.set(\"integration_quote_id\", jsonData.data.quoteId);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 100,\n  \"recipientType\": \"paybill\",\n  \"businessNumber\": \"220220\",\n  \"accountNumber\": \"254726367035\",\n  \"recipientName\": \"Integration Test Payment\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments/b2b/quote",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments",
+										"b2b",
+										"quote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Finalize Integration Payment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Integration payment finalized\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"    pm.globals.set(\"integration_transaction_id\", jsonData.data.transactionId);",
+											"    if (jsonData.data.mpesaResponse && jsonData.data.mpesaResponse.originatorConversationId) {",
+											"        pm.globals.set(\"integration_originator_conversation_id\", jsonData.data.mpesaResponse.originatorConversationId);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"quoteId\": \"{{integration_quote_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments",
+										"b2b",
+										"finalize"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Simulate Success Callback",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Success callback processed\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.ResultCode).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 0,\n    \"ResultDesc\": \"The service request is processed successfully.\",\n    \"OriginatorConversationID\": \"{{integration_originator_conversation_id}}\",\n    \"ConversationID\": \"AG_INTEGRATION_SUCCESS\",\n    \"TransactionID\": \"INT_SUCCESS_001\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"INT_SUCCESS_001\"\n        },\n        {\n          \"Key\": \"TransactionAmount\",\n          \"Value\": \"100.00\"\n        },\n        {\n          \"Key\": \"TransactionReceipt\",\n          \"Value\": \"INT_SUCCESS_001\"\n        },\n        {\n          \"Key\": \"ReceiverPartyPublicName\",\n          \"Value\": \"220220 - Integration Test\"\n        },\n        {\n          \"Key\": \"TransactionCompletedDateTime\",\n          \"Value\": \"13.12.2023 18:45:30\"\n        }\n      ]\n    }\n  }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"mpesa",
+										"callback",
+										"b2b"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4. Check Balance After Success",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Balance check after success\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/wallet/balance/USDT",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"wallet",
+										"balance",
+										"USDT"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Complete successful B2B payment flow from quote to callback"
+				},
+				{
+					"name": "Complete Failure Flow",
+					"item": [
+						{
+							"name": "1. Create Failure Test Quote",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Failure test quote created\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"    pm.globals.set(\"failure_quote_id\", jsonData.data.quoteId);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"tokenSymbol\": \"USDT\",\n  \"fiatAmount\": 50,\n  \"recipientType\": \"till\",\n  \"businessNumber\": \"567890\",\n  \"recipientName\": \"Failure Test Till\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments/b2b/quote",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments",
+										"b2b",
+										"quote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Finalize Failure Test Payment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Failure test payment finalized\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"    pm.globals.set(\"failure_transaction_id\", jsonData.data.transactionId);",
+											"    if (jsonData.data.mpesaResponse && jsonData.data.mpesaResponse.originatorConversationId) {",
+											"        pm.globals.set(\"failure_originator_conversation_id\", jsonData.data.mpesaResponse.originatorConversationId);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"quoteId\": \"{{failure_quote_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments/b2b/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments",
+										"b2b",
+										"finalize"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Simulate Failure Callback",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Failure callback processed\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.ResultCode).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"Result\": {\n    \"ResultType\": 0,\n    \"ResultCode\": 1,\n    \"ResultDesc\": \"The balance is insufficient for the transaction.\",\n    \"OriginatorConversationID\": \"{{failure_originator_conversation_id}}\",\n    \"ConversationID\": \"AG_INTEGRATION_FAIL\",\n    \"TransactionID\": \"INT_FAIL_001\",\n    \"ResultParameters\": {\n      \"ResultParameter\": [\n        {\n          \"Key\": \"TransactionID\",\n          \"Value\": \"INT_FAIL_001\"\n        }\n      ]\n    }\n  }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/mpesa/callback/b2b",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"mpesa",
+										"callback",
+										"b2b"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4. Check Balance After Failure (Should be Restored)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Balance check after failure\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.success).to.eql(true);",
+											"    // Balance should be restored after failure",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/wallet/balance/USDT",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"wallet",
+										"balance",
+										"USDT"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Complete failed B2B payment flow with balance restoration"
+				}
+			],
+			"description": "End-to-end integration test flows"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script to set up common variables",
+					"if (!pm.globals.get(\"baseUrl\")) {",
+					"    pm.globals.set(\"baseUrl\", \"http://localhost:3000\");",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Common test script for all requests",
+					"pm.test(\"Response time is less than 5000ms\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test(\"Response has proper content type\", function () {",
+					"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "paybill_quote_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "till_quote_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "pochi_quote_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "paybill_transaction_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "till_transaction_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "pochi_transaction_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "paybill_originator_conversation_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "till_originator_conversation_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "pochi_originator_conversation_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -1,0 +1,1085 @@
+###
+# B2B Payment API Tests
+# Tests for crypto-funded MPESA B2B payments
+###
+
+# Variables - Update these with actual values
+@baseUrl = http://localhost:3000
+### Extract token from login response
+@jwt_token = {{login.response.body.data.session.accessToken}}
+@refreshToken = {{login.response.body.data.session.refreshToken}}
+@currentUserId = {{login.response.body.data.user.id}}
+
+@authToken = {{login.response.body.data.session.accessToken}}
+
+@quoteId = {{getB2BPaymentQuote.response.body.data.quoteId}}
+
+###
+# Authentication - Get JWT Token
+###
+
+### Login and Set JWT Token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "muhindi.kn@gmail.com",
+  "password": "SecurePass123"
+}
+
+### 1. Create B2B Payment Quote - Paybill (using dynamic token)
+# @name getB2BPaymentQuote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 40,
+  "recipientType": "paybill",
+  "businessNumber": "220220",
+  "accountNumber": "254726367035",
+  "recipientName": "Airtime Vendor"
+}
+
+### 2. Create B2B Payment Quote - Till Number (using dynamic token)
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 500,
+  "recipientType": "till",
+  "businessNumber": "567890",
+  "recipientName": "Till Business"
+}
+
+### 3. Create B2B Payment Quote - Pochi (Phone)
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 250,
+  "recipientType": "pochi",
+  "businessNumber": "0712345678",
+  "recipientName": "John Doe"
+}
+
+### 4. Create B2B Payment Quote - Different Token
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDC",
+  "fiatAmount": 2000,
+  "recipientType": "paybill",
+  "businessNumber": "400200",
+  "accountNumber": "0712345678",
+  "recipientName": "Equity Bank"
+}
+
+### 5. Finalize B2B Payment - Replace with actual quoteId from step 1
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{quoteId}}"
+}
+
+###
+# Error Test Cases
+###
+
+### 6. Create Quote - Missing Required Fields
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000
+}
+
+### 7. Create Quote - Invalid Recipient Type
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "invalid",
+  "businessNumber": "123456"
+}
+
+### 8. Create Quote - Paybill Without Account Number
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123456"
+}
+
+### 9. Create Quote - Invalid Business Number (too short)
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123",
+  "accountNumber": "ACC123"
+}
+
+### 10. Create Quote - Amount Too Small
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 5,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "ACC123"
+}
+
+### 11. Create Quote - Amount Too Large
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 100000,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "ACC123"
+}
+
+### 12. Create Quote - Unsupported Token
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "DOGE",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "ACC123"
+}
+
+### 13. Finalize Payment - Missing Quote ID
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+}
+
+### 14. Finalize Payment - Invalid Quote ID
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "invalid-quote-id"
+}
+
+### 15. Finalize Payment - Expired Quote ID (use old quote)
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "b2b_old_expired_quote"
+}
+
+###
+# Authentication Error Tests
+###
+
+### 16. Create Quote - No Authorization Header
+POST {{baseUrl}}/api/payments/b2b/quote
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "ACC123"
+}
+
+### 17. Create Quote - Invalid Token
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer invalid_token_here
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "ACC123"
+}
+
+### 18. Finalize Payment - No Authorization Header
+POST {{baseUrl}}/api/payments/b2b/finalize
+Content-Type: application/json
+
+{
+  "quoteId": "b2b_1234567890_abc123"
+}
+
+###
+# Realistic Test Scenarios
+###
+
+### 19. Pay Equity Bank Paybill
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 5000,
+  "recipientType": "paybill",
+  "businessNumber": "247247",
+  "accountNumber": "1234567890",
+  "recipientName": "Equity Bank Kenya"
+}
+
+### 20. Pay KCB Paybill
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDC",
+  "fiatAmount": 3000,
+  "recipientType": "paybill",
+  "businessNumber": "522522",
+  "accountNumber": "9876543210",
+  "recipientName": "KCB Bank Kenya"
+}
+
+### 21. Pay Safaricom Postpaid
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1500,
+  "recipientType": "paybill",
+  "businessNumber": "100100",
+  "accountNumber": "0712345678",
+  "recipientName": "Safaricom Postpaid"
+}
+
+### 22. Pay KPLC (Electricity)
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 2500,
+  "recipientType": "paybill",
+  "businessNumber": "888880",
+  "accountNumber": "12345678901",
+  "recipientName": "Kenya Power & Lighting"
+}
+
+### 23. Pay Water Bill - Nairobi Water
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 800,
+  "recipientType": "paybill",
+  "businessNumber": "885885",
+  "accountNumber": "123456789",
+  "recipientName": "Nairobi City Water"
+}
+
+### 24. Buy Goods from Till
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 450,
+  "recipientType": "till",
+  "businessNumber": "123456",
+  "recipientName": "Local Shop"
+}
+
+###
+# Wallet and Balance Tests
+###
+
+### 25. Check Wallet Balance Before Payment
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer {{authToken}}
+
+### 26. Get Specific Token Balance
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{authToken}}
+
+### 27. Get Supported Tokens
+GET {{baseUrl}}/api/wallet/tokens
+
+###
+# Transaction Status Tests (if implemented)
+###
+
+### 28. Get Transaction Status
+GET {{baseUrl}}/api/payments/purchase/txn_987654321
+Authorization: Bearer {{authToken}}
+
+###
+# Load Testing Scenarios
+###
+
+### 29. Multiple Quick Quotes (simulate load)
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 100,
+  "recipientType": "till",
+  "businessNumber": "555555",
+  "recipientName": "Load Test 1"
+}
+
+### 30. Another Quick Quote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 200,
+  "recipientType": "till",
+  "businessNumber": "666666",
+  "recipientName": "Load Test 2"
+}
+
+###
+# Integration Test Flow
+###
+
+### Step 1: Create a quote and save the quoteId
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "123456",
+  "accountNumber": "TEST123",
+  "recipientName": "Integration Test"
+}
+
+### Step 2: Immediately finalize the payment (update quoteId from Step 1 response)
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quoteId": "REPLACE_WITH_QUOTE_ID_FROM_STEP_1"
+}
+
+### Step 3: Check wallet balance after payment
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{authToken}}
+
+###
+# Documentation Examples
+###
+
+### Example 1: Complete Paybill Payment Flow
+# 1. Create quote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1500,
+  "recipientType": "paybill",
+  "businessNumber": "247247",
+  "accountNumber": "1234567890",
+  "recipientName": "Equity Bank"
+}
+
+# Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "quoteId": "b2b_abc123_def456",
+#     "tokenSymbol": "USDT",
+#     "tokenAmount": 23.26,
+#     "fiatAmount": 1500,
+#     "exchangeRate": 64.52,
+#     "platformFee": 30.0,
+#     "recipient": {
+#       "type": "paybill",
+#       "businessNumber": "247247",
+#       "accountNumber": "1234567890",
+#       "name": "Equity Bank"
+#     },
+#     "expiresAt": "2025-01-15T10:35:00Z"
+#   }
+# }
+
+# 2. Finalize payment (use quoteId from above response)
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quoteId": "b2b_abc123_def456"
+}
+
+# Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "transactionId": "txn_987654321",
+#     "tokenSymbol": "USDT",
+#     "tokenAmount": 23.26,
+#     "fiatAmount": 1500,
+#     "exchangeRate": 64.52,
+#     "platformFee": 30.0,
+#     "recipient": {
+#       "type": "paybill",
+#       "businessNumber": "247247",
+#       "accountNumber": "1234567890",
+#       "name": "Equity Bank"
+#     },
+#     "mpesaResponse": {
+#       "conversationId": "AG_20250115_123456",
+#       "originatorConversationId": "12345",
+#       "responseCode": "0",
+#       "responseDescription": "Accept the service request successfully."
+#     },
+#     "status": "processing"
+#   }
+# }
+
+###
+# Complete Authentication + Payment Flow Example
+###
+
+### Step 1: Login and get token
+# @name authFlow
+POST {{baseUrl}}/api/auth/signin
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "your_password_here"
+}
+
+### Step 2: Extract token for this flow
+@flow_token = {{authFlow.response.body.data.token}}
+
+### Step 3: Check wallet balance
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{flow_token}}
+
+### Step 4: Create payment quote
+# @name flowQuote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{flow_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 1000,
+  "recipientType": "paybill",
+  "businessNumber": "247247",
+  "accountNumber": "1234567890",
+  "recipientName": "Equity Bank"
+}
+
+### Step 5: Extract quote ID and finalize payment
+@flow_quote_id = {{flowQuote.response.body.data.quoteId}}
+
+### Step 6: Finalize the payment
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{flow_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{flow_quote_id}}"
+}
+
+### Step 7: Check updated wallet balance
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{flow_token}}
+
+###
+# B2B Payment Callback Tests
+# Tests for M-Pesa B2B payment webhook callbacks
+###
+
+### B2B Callback Test 1: Successful Payment Callback
+# This simulates M-Pesa calling our webhook when a B2B payment succeeds
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-1",
+    "ConversationID": "AG_20231213_1234567890abcdef",
+    "TransactionID": "NLJ7RT61SV",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "1000.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "254708374149 - John Doe"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 11:45:50"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "10000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "900000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Utility Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "0.00"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 2: Failed Payment Callback
+# This simulates M-Pesa calling our webhook when a B2B payment fails
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "29115-34620561-2",
+    "ConversationID": "AG_20231213_0987654321fedcba",
+    "TransactionID": "NLJ7RT61SX",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SX"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 3: Invalid Account Number
+# Simulates callback for invalid account number error
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 2,
+    "ResultDesc": "Invalid Account Number",
+    "OriginatorConversationID": "29115-34620561-3",
+    "ConversationID": "AG_20231213_1122334455667788",
+    "TransactionID": "NLJ7RT61SY",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SY"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 4: System Error
+# Simulates callback for system error
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1001,
+    "ResultDesc": "Unable to lock subscriber, a transaction is already in process for the current subscriber",
+    "OriginatorConversationID": "29115-34620561-4",
+    "ConversationID": "AG_20231213_aabbccddee112233",
+    "TransactionID": "NLJ7RT61SZ",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SZ"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 5: Malformed Callback Data
+# Test handling of malformed callback data
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "InvalidStructure": {
+    "SomeField": "SomeValue"
+  }
+}
+
+### B2B Callback Test 6: Missing Required Fields
+# Test handling of missing required fields
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0
+  }
+}
+
+### B2B Callback Test 7: Successful Paybill Payment with All Parameters
+# Complete successful paybill payment callback with all possible parameters
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-5",
+    "ConversationID": "AG_20231213_paybill123456",
+    "TransactionID": "NLJ7RT61PA",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61PA"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "500.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61PA"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "220220 - Airtel Money Kenya"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 14:30:25"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "15000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "1200000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Paybill Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "25.00"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 8: Successful Till Payment
+# Successful till number payment callback
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-6",
+    "ConversationID": "AG_20231213_till567890",
+    "TransactionID": "NLJ7RT61TL",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61TL"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "250.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61TL"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "567890 - Local Shop Till"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 16:15:42"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "8000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "850000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Till Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "10.00"
+        }
+      ]
+    }
+  }
+}
+
+###
+# B2B Callback Integration Tests
+# These tests simulate real-world scenarios
+###
+
+### Integration Test 1: Create B2B Quote → Finalize → Simulate Success Callback
+# Step 1: Create a B2B payment quote
+# @name integrationQuote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 100,
+  "recipientType": "paybill",
+  "businessNumber": "220220",
+  "accountNumber": "254726367035",
+  "recipientName": "Integration Test Payment"
+}
+
+### Step 2: Finalize the payment (this will return an originatorConversationId)
+# @name integrationFinalize
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{integrationQuote.response.body.data.quoteId}}"
+}
+
+### Step 3: Simulate successful callback from M-Pesa
+# Use the originatorConversationId from the finalize response
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "REPLACE_WITH_ACTUAL_ORIGINATOR_CONVERSATION_ID",
+    "ConversationID": "AG_20231213_integration_success",
+    "TransactionID": "INT_SUCCESS_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "INT_SUCCESS_001"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "100.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "INT_SUCCESS_001"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "220220 - Integration Test Paybill"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 18:45:30"
+        }
+      ]
+    }
+  }
+}
+
+### Integration Test 2: Create B2B Quote → Finalize → Simulate Failed Callback
+# Step 1: Create another B2B payment quote
+# @name integrationQuoteFail
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 50,
+  "recipientType": "till",
+  "businessNumber": "567890",
+  "recipientName": "Integration Test Till"
+}
+
+### Step 2: Finalize the payment
+# @name integrationFinalizeFail
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{integrationQuoteFail.response.body.data.quoteId}}"
+}
+
+### Step 3: Simulate failed callback from M-Pesa (this should restore user's crypto balance)
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "REPLACE_WITH_ACTUAL_ORIGINATOR_CONVERSATION_ID_FAIL",
+    "ConversationID": "AG_20231213_integration_fail",
+    "TransactionID": "INT_FAIL_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "INT_FAIL_001"
+        }
+      ]
+    }
+  }
+}
+
+### Step 4: Check wallet balance after failed payment (should be restored)
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{jwt_token}}
+
+###
+# Callback Endpoint Health Tests
+###
+
+### Test B2B Callback Endpoint Availability
+OPTIONS {{baseUrl}}/api/mpesa/callback/b2b
+
+### Test B2B Callback with GET (should return 404 or Method Not Allowed)
+GET {{baseUrl}}/api/mpesa/callback/b2b
+
+### Test B2B Callback with Empty Body
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{}
+
+### Test B2B Callback with Invalid JSON
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "invalid": "json",
+  "missing": "comma"
+  "error": true
+}
+
+###
+# Load Testing for Callbacks (Multiple Rapid Callbacks)
+###
+
+### Load Test 1: Multiple Success Callbacks
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultCode": 0,
+    "ResultDesc": "Success",
+    "OriginatorConversationID": "LOAD_TEST_001",
+    "ConversationID": "AG_LOAD_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "LOAD_001"
+        }
+      ]
+    }
+  }
+}
+
+### Load Test 2: Multiple Failure Callbacks
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultCode": 1,
+    "ResultDesc": "Failed",
+    "OriginatorConversationID": "LOAD_TEST_002",
+    "ConversationID": "AG_LOAD_002",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "LOAD_002"
+        }
+      ]
+    }
+  }
+}
+
+###
+# Documentation Examples for B2B Callbacks
+###
+
+### Example 1: Typical Successful B2B Payment Callback
+# This is what M-Pesa sends to your callback URL when a B2B payment succeeds
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-1",
+    "ConversationID": "AG_20231213_1234567890abcdef",
+    "TransactionID": "NLJ7RT61SV",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "1000.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "254708374149 - John Doe"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 11:45:50"
+        }
+      ]
+    }
+  }
+}
+
+# Expected Response:
+# {
+#   "ResultCode": 0,
+#   "ResultDesc": "B2B callback processed successfully"
+# }
+
+### Example 2: Typical Failed B2B Payment Callback
+# This is what M-Pesa sends when a B2B payment fails
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "29115-34620561-2",
+    "ConversationID": "AG_20231213_0987654321fedcba",
+    "TransactionID": "NLJ7RT61SX",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SX"
+        }
+      ]
+    }
+  }
+}
+
+# Expected Response:
+# {
+#   "ResultCode": 0,
+#   "ResultDesc": "B2B callback processed successfully"
+# }

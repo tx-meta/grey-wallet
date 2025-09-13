@@ -10,6 +10,7 @@ import { MpesaCallbackController } from '../controllers/mpesa-callback-controlle
 // Get M-Pesa callback controller from dependency injection container
 const mpesaCallbackController = new MpesaCallbackController(
   container.getRepositories().walletRepository,
+  container.getRepositories().userRepository,
   container.getServices().notificationService,
   container.getServices().paymentService,
   container.getServices().treasuryService
@@ -19,6 +20,9 @@ const router = Router();
 
 // POST /api/mpesa/callback/stk-push - Handle STK Push callbacks (buy crypto)
 router.post('/stk-push', mpesaCallbackController.handleSTKPushCallback.bind(mpesaCallbackController));
+
+// POST /api/mpesa/callback/b2b - Handle B2B payment callbacks (business payments)
+router.post('/b2b', mpesaCallbackController.handleB2BCallback.bind(mpesaCallbackController));
 
 // POST /api/mpesa/callback/b2c - Handle B2C callbacks (sell crypto)
 router.post('/b2c', mpesaCallbackController.handleB2CCallback.bind(mpesaCallbackController));

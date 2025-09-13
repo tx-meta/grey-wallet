@@ -31,7 +31,7 @@ export class ServiceFactory {
    * Creates a real WalletRepository implementation
    */
   static createWalletRepository(): WalletRepository {
-    return new PrismaWalletRepository(require('../database/prisma-client').default);
+    return new PrismaWalletRepository();
   }
 
   /**

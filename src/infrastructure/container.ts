@@ -11,6 +11,7 @@ import { VaultService } from '../application/interfaces/vault-service';
 import { NotificationService } from '../application/interfaces/notification-service';
 import { CryptoService } from '../application/interfaces/crypto-service';
 import { TreasuryService } from '../application/interfaces/treasury-service';
+import { B2BPaymentService } from '../application/interfaces/b2b-payment-service';
 
 // Import implementations
 import { MockUserRepository } from './repositories/mock-user-repository';
@@ -24,6 +25,7 @@ import { MockCryptoService } from './services/mock-crypto-service';
 import { MpesaPaymentService } from './services/mpesa-payment-service';
 import { CryptoQuoteServiceImpl } from './services/crypto-quote-service';
 import { TreasuryServiceImpl } from './services/treasury-service';
+import { B2BPaymentServiceImpl } from './services/b2b-payment-service';
 import prisma from './database/prisma-client';
 
 // Import service factory
@@ -47,6 +49,8 @@ import { FinalizeCryptoSaleUseCase } from '../domain/use_cases/finalize-crypto-s
 import { GetBuyCryptoQuoteUseCase } from '../domain/use_cases/get-buy-crypto-quote';
 import { FinalizeCryptoPurchaseUseCase } from '../domain/use_cases/finalize-crypto-purchase';
 import { DeleteUserAccountUseCase } from '../domain/use_cases/delete-user-account';
+import { CreateB2BPaymentQuoteUseCase } from '../domain/use_cases/create-b2b-payment-quote';
+import { FinalizeB2BPaymentUseCase } from '../domain/use_cases/finalize-b2b-payment';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
@@ -57,6 +61,7 @@ import { TermsController } from '../presentation/controllers/terms-controller';
 import { CryptoQuoteController } from '../presentation/controllers/crypto-quote-controller';
 import { SellCryptoController } from '../presentation/controllers/sell-crypto-controller';
 import { BuyCryptoController } from '../presentation/controllers/buy-crypto-controller';
+import { B2BPaymentController } from '../presentation/controllers/b2b-payment-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -102,6 +107,7 @@ export class Container {
     this.services.set('CryptoService', new MockCryptoService());
     this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
     this.services.set('TreasuryService', new TreasuryServiceImpl(prisma));
+    this.services.set('B2BPaymentService', new B2BPaymentServiceImpl(this.services.get('CryptoQuoteService')));
     
     // Always use real HashiCorp Vault service
     try {
@@ -162,6 +168,7 @@ export class Container {
     this.services.set('PaymentService', new MpesaPaymentService());
     this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
     this.services.set('TreasuryService', new TreasuryServiceImpl(prisma));
+    this.services.set('B2BPaymentService', new B2BPaymentServiceImpl(this.services.get('CryptoQuoteService')));
   }
 
   public get<T>(serviceName: string): T {
@@ -420,6 +427,37 @@ export class Container {
     return this.get<BuyCryptoController>('BuyCryptoController');
   }
 
+  public getB2BPaymentController(): B2BPaymentController {
+    // Initialize B2B payment use cases if not already done
+    if (!this.services.has('CreateB2BPaymentQuoteUseCase')) {
+      this.services.set('CreateB2BPaymentQuoteUseCase', new CreateB2BPaymentQuoteUseCase(
+        this.services.get('B2BPaymentService'),
+        this.services.get('TokenRepository'),
+        this.services.get('WalletRepository')
+      ));
+    }
+
+    if (!this.services.has('FinalizeB2BPaymentUseCase')) {
+      this.services.set('FinalizeB2BPaymentUseCase', new FinalizeB2BPaymentUseCase(
+        this.services.get('B2BPaymentService'),
+        this.services.get('WalletRepository'),
+        this.services.get('UserRepository'),
+        this.services.get('TokenRepository'),
+        this.services.get('NotificationService'),
+        this.services.get('TreasuryService')
+      ));
+    }
+
+    if (!this.services.has('B2BPaymentController')) {
+      this.services.set('B2BPaymentController', new B2BPaymentController(
+        this.services.get('CreateB2BPaymentQuoteUseCase'),
+        this.services.get('FinalizeB2BPaymentUseCase')
+      ));
+    }
+
+    return this.get<B2BPaymentController>('B2BPaymentController');
+  }
+
   public getRepositories() {
     return {
       userRepository: this.get<UserRepository>('UserRepository'),
@@ -436,6 +474,7 @@ export class Container {
       cryptoService: this.get<CryptoService>('CryptoService'),
       paymentService: this.get<MpesaPaymentService>('PaymentService'),
       treasuryService: this.get<TreasuryService>('TreasuryService'),
+      b2bPaymentService: this.get<B2BPaymentService>('B2BPaymentService'),
     };
   }
 }
@@ -469,6 +508,7 @@ export default {
   get cryptoQuoteController() { return containerInstance.getCryptoQuoteController(); },
   get sellCryptoController() { return containerInstance.getSellCryptoController(); },
   get buyCryptoController() { return containerInstance.getBuyCryptoController(); },
+  get b2bPaymentController() { return containerInstance.getB2BPaymentController(); },
   
   // Middleware
   get authMiddleware() { return containerInstance.getAuthMiddleware(); }

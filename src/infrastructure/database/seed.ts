@@ -3,44 +3,37 @@
  * Populates the database with initial data
  */
 
-import prisma from './prisma-client';
+import { PrismaClient } from '@prisma/client';
 import { SupportedToken } from '../../domain/entities/supported-token';
 import logger from '../../../shared/logging';
 
 export async function seedDatabase(): Promise<void> {
+  // Create a fresh Prisma client to avoid prepared statement conflicts
+  const prisma = new PrismaClient();
+  
   try {
     logger.info('Starting database seeding...');
 
     // Add a small delay to ensure database connection is stable
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Check if tokens already exist with retry logic
-    let existingTokens = 0;
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount < maxRetries) {
-      try {
-        existingTokens = await prisma.supportedToken.count();
-        break;
-      } catch (error) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          throw error;
-        }
-        logger.warn(`Database count query failed, retrying... (${retryCount}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
-      }
-    }
+    // Try to seed tokens, handling duplicates gracefully
+    logger.info('Seeding default tokens...');
     
-    if (existingTokens === 0) {
-      logger.info('No tokens found, seeding default tokens...');
-      
-      const defaultTokens = SupportedToken.getDefaultTokens();
-      
-      for (const token of defaultTokens) {
-        await prisma.supportedToken.create({
-          data: {
+    const defaultTokens = SupportedToken.getDefaultTokens();
+    let seededCount = 0;
+    
+    for (const token of defaultTokens) {
+      try {
+        // Use upsert to avoid conflicts and prepared statement issues
+        await prisma.supportedToken.upsert({
+          where: { symbol: token.symbol },
+          update: {
+            name: token.name,
+            icon: token.icon,
+            isActive: token.isActive,
+          },
+          create: {
             tokenId: token.tokenId,
             name: token.name,
             symbol: token.symbol,
@@ -48,12 +41,14 @@ export async function seedDatabase(): Promise<void> {
             isActive: token.isActive,
           },
         });
+        seededCount++;
+        logger.info(`Processed token: ${token.symbol}`);
+      } catch (error: any) {
+        logger.warn(`Failed to process token ${token.symbol}:`, { error: error.message });
       }
-      
-      logger.info(`Seeded ${defaultTokens.length} default tokens`);
-    } else {
-      logger.info(`Database already contains ${existingTokens} tokens, skipping seeding`);
     }
+    
+    logger.info(`Seeded ${seededCount} new tokens out of ${defaultTokens.length} total tokens`);
 
     logger.info('Database seeding completed successfully');
   } catch (error) {
@@ -63,6 +58,9 @@ export async function seedDatabase(): Promise<void> {
     // Don't throw the error to prevent server startup failure
     // The application can still run without seeding
     logger.warn('Continuing server startup despite seeding failure...');
+  } finally {
+    // Always disconnect the Prisma client
+    await prisma.$disconnect();
   }
 }
 
