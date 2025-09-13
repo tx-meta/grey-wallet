@@ -541,3 +541,545 @@ Content-Type: application/json
 ### Step 7: Check updated wallet balance
 GET {{baseUrl}}/api/wallet/balance/USDT
 Authorization: Bearer {{flow_token}}
+
+###
+# B2B Payment Callback Tests
+# Tests for M-Pesa B2B payment webhook callbacks
+###
+
+### B2B Callback Test 1: Successful Payment Callback
+# This simulates M-Pesa calling our webhook when a B2B payment succeeds
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-1",
+    "ConversationID": "AG_20231213_1234567890abcdef",
+    "TransactionID": "NLJ7RT61SV",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "1000.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "254708374149 - John Doe"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 11:45:50"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "10000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "900000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Utility Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "0.00"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 2: Failed Payment Callback
+# This simulates M-Pesa calling our webhook when a B2B payment fails
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "29115-34620561-2",
+    "ConversationID": "AG_20231213_0987654321fedcba",
+    "TransactionID": "NLJ7RT61SX",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SX"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 3: Invalid Account Number
+# Simulates callback for invalid account number error
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 2,
+    "ResultDesc": "Invalid Account Number",
+    "OriginatorConversationID": "29115-34620561-3",
+    "ConversationID": "AG_20231213_1122334455667788",
+    "TransactionID": "NLJ7RT61SY",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SY"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 4: System Error
+# Simulates callback for system error
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1001,
+    "ResultDesc": "Unable to lock subscriber, a transaction is already in process for the current subscriber",
+    "OriginatorConversationID": "29115-34620561-4",
+    "ConversationID": "AG_20231213_aabbccddee112233",
+    "TransactionID": "NLJ7RT61SZ",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SZ"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 5: Malformed Callback Data
+# Test handling of malformed callback data
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "InvalidStructure": {
+    "SomeField": "SomeValue"
+  }
+}
+
+### B2B Callback Test 6: Missing Required Fields
+# Test handling of missing required fields
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0
+  }
+}
+
+### B2B Callback Test 7: Successful Paybill Payment with All Parameters
+# Complete successful paybill payment callback with all possible parameters
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-5",
+    "ConversationID": "AG_20231213_paybill123456",
+    "TransactionID": "NLJ7RT61PA",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61PA"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "500.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61PA"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "220220 - Airtel Money Kenya"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 14:30:25"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "15000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "1200000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Paybill Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "25.00"
+        }
+      ]
+    }
+  }
+}
+
+### B2B Callback Test 8: Successful Till Payment
+# Successful till number payment callback
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-6",
+    "ConversationID": "AG_20231213_till567890",
+    "TransactionID": "NLJ7RT61TL",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61TL"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "250.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61TL"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "567890 - Local Shop Till"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 16:15:42"
+        },
+        {
+          "Key": "B2CUtilityAccountAvailableFunds",
+          "Value": "8000.00"
+        },
+        {
+          "Key": "B2CWorkingAccountAvailableFunds",
+          "Value": "850000.00"
+        },
+        {
+          "Key": "B2CReceiverAccountType",
+          "Value": "Till Account"
+        },
+        {
+          "Key": "B2CChargesPaidAccountAvailableFunds",
+          "Value": "10.00"
+        }
+      ]
+    }
+  }
+}
+
+###
+# B2B Callback Integration Tests
+# These tests simulate real-world scenarios
+###
+
+### Integration Test 1: Create B2B Quote → Finalize → Simulate Success Callback
+# Step 1: Create a B2B payment quote
+# @name integrationQuote
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 100,
+  "recipientType": "paybill",
+  "businessNumber": "220220",
+  "accountNumber": "254726367035",
+  "recipientName": "Integration Test Payment"
+}
+
+### Step 2: Finalize the payment (this will return an originatorConversationId)
+# @name integrationFinalize
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{integrationQuote.response.body.data.quoteId}}"
+}
+
+### Step 3: Simulate successful callback from M-Pesa
+# Use the originatorConversationId from the finalize response
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "REPLACE_WITH_ACTUAL_ORIGINATOR_CONVERSATION_ID",
+    "ConversationID": "AG_20231213_integration_success",
+    "TransactionID": "INT_SUCCESS_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "INT_SUCCESS_001"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "100.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "INT_SUCCESS_001"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "220220 - Integration Test Paybill"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 18:45:30"
+        }
+      ]
+    }
+  }
+}
+
+### Integration Test 2: Create B2B Quote → Finalize → Simulate Failed Callback
+# Step 1: Create another B2B payment quote
+# @name integrationQuoteFail
+POST {{baseUrl}}/api/payments/b2b/quote
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "tokenSymbol": "USDT",
+  "fiatAmount": 50,
+  "recipientType": "till",
+  "businessNumber": "567890",
+  "recipientName": "Integration Test Till"
+}
+
+### Step 2: Finalize the payment
+# @name integrationFinalizeFail
+POST {{baseUrl}}/api/payments/b2b/finalize
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "quoteId": "{{integrationQuoteFail.response.body.data.quoteId}}"
+}
+
+### Step 3: Simulate failed callback from M-Pesa (this should restore user's crypto balance)
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "REPLACE_WITH_ACTUAL_ORIGINATOR_CONVERSATION_ID_FAIL",
+    "ConversationID": "AG_20231213_integration_fail",
+    "TransactionID": "INT_FAIL_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "INT_FAIL_001"
+        }
+      ]
+    }
+  }
+}
+
+### Step 4: Check wallet balance after failed payment (should be restored)
+GET {{baseUrl}}/api/wallet/balance/USDT
+Authorization: Bearer {{jwt_token}}
+
+###
+# Callback Endpoint Health Tests
+###
+
+### Test B2B Callback Endpoint Availability
+OPTIONS {{baseUrl}}/api/mpesa/callback/b2b
+
+### Test B2B Callback with GET (should return 404 or Method Not Allowed)
+GET {{baseUrl}}/api/mpesa/callback/b2b
+
+### Test B2B Callback with Empty Body
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{}
+
+### Test B2B Callback with Invalid JSON
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "invalid": "json",
+  "missing": "comma"
+  "error": true
+}
+
+###
+# Load Testing for Callbacks (Multiple Rapid Callbacks)
+###
+
+### Load Test 1: Multiple Success Callbacks
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultCode": 0,
+    "ResultDesc": "Success",
+    "OriginatorConversationID": "LOAD_TEST_001",
+    "ConversationID": "AG_LOAD_001",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "LOAD_001"
+        }
+      ]
+    }
+  }
+}
+
+### Load Test 2: Multiple Failure Callbacks
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultCode": 1,
+    "ResultDesc": "Failed",
+    "OriginatorConversationID": "LOAD_TEST_002",
+    "ConversationID": "AG_LOAD_002",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "LOAD_002"
+        }
+      ]
+    }
+  }
+}
+
+###
+# Documentation Examples for B2B Callbacks
+###
+
+### Example 1: Typical Successful B2B Payment Callback
+# This is what M-Pesa sends to your callback URL when a B2B payment succeeds
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 0,
+    "ResultDesc": "The service request is processed successfully.",
+    "OriginatorConversationID": "29115-34620561-1",
+    "ConversationID": "AG_20231213_1234567890abcdef",
+    "TransactionID": "NLJ7RT61SV",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "TransactionAmount",
+          "Value": "1000.00"
+        },
+        {
+          "Key": "TransactionReceipt",
+          "Value": "NLJ7RT61SV"
+        },
+        {
+          "Key": "ReceiverPartyPublicName",
+          "Value": "254708374149 - John Doe"
+        },
+        {
+          "Key": "TransactionCompletedDateTime",
+          "Value": "13.12.2023 11:45:50"
+        }
+      ]
+    }
+  }
+}
+
+# Expected Response:
+# {
+#   "ResultCode": 0,
+#   "ResultDesc": "B2B callback processed successfully"
+# }
+
+### Example 2: Typical Failed B2B Payment Callback
+# This is what M-Pesa sends when a B2B payment fails
+POST {{baseUrl}}/api/mpesa/callback/b2b
+Content-Type: application/json
+
+{
+  "Result": {
+    "ResultType": 0,
+    "ResultCode": 1,
+    "ResultDesc": "The balance is insufficient for the transaction.",
+    "OriginatorConversationID": "29115-34620561-2",
+    "ConversationID": "AG_20231213_0987654321fedcba",
+    "TransactionID": "NLJ7RT61SX",
+    "ResultParameters": {
+      "ResultParameter": [
+        {
+          "Key": "TransactionID",
+          "Value": "NLJ7RT61SX"
+        }
+      ]
+    }
+  }
+}
+
+# Expected Response:
+# {
+#   "ResultCode": 0,
+#   "ResultDesc": "B2B callback processed successfully"
+# }
