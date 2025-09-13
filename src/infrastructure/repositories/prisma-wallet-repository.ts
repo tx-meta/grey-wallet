@@ -5,12 +5,12 @@
 
 import { Wallet } from '../../domain/entities/wallet';
 import { WalletRepository } from '../../domain/repositories/wallet-repository';
+import prisma from '../database/prisma-client';
 
 export class PrismaWalletRepository implements WalletRepository {
-  constructor(private prisma: any) {}
 
   async save(wallet: Wallet): Promise<Wallet> {
-    const savedWallet = await this.prisma.wallet.create({
+    const savedWallet = await prisma.wallet.create({
       data: {
         walletId: wallet.walletId,
         tokenSymbol: wallet.tokenSymbol,
@@ -22,7 +22,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async findById(walletId: string): Promise<Wallet | null> {
-    const wallet = await this.prisma.wallet.findUnique({
+    const wallet = await prisma.wallet.findUnique({
       where: { walletId },
     });
 
@@ -30,7 +30,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async findByTokenSymbol(tokenSymbol: string): Promise<Wallet | null> {
-    const wallet = await this.prisma.wallet.findUnique({
+    const wallet = await prisma.wallet.findUnique({
       where: { tokenSymbol },
     });
 
@@ -38,7 +38,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async update(wallet: Wallet): Promise<Wallet> {
-    const updatedWallet = await this.prisma.wallet.update({
+    const updatedWallet = await prisma.wallet.update({
       where: { walletId: wallet.walletId },
       data: {
         tokenSymbol: wallet.tokenSymbol,
@@ -51,7 +51,7 @@ export class PrismaWalletRepository implements WalletRepository {
 
   async delete(walletId: string): Promise<boolean> {
     try {
-      await this.prisma.wallet.delete({
+      await prisma.wallet.delete({
         where: { walletId },
       });
       return true;
@@ -61,12 +61,12 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async findActiveWallets(): Promise<Wallet[]> {
-    const wallets = await this.prisma.wallet.findMany();
+    const wallets = await prisma.wallet.findMany();
     return wallets.map((wallet: any) => this.mapToDomain(wallet));
   }
 
   async getAndIncrementAddressIndex(walletId: string): Promise<number> {
-    const result = await this.prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Find or create address counter
       let counter = await tx.addressCounter.findUnique({
         where: { walletId },
@@ -96,7 +96,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async addUserAddress(userId: string, walletId: string, address: string): Promise<void> {
-    await this.prisma.userAddress.create({
+    await prisma.userAddress.create({
       data: {
         userId,
         walletId,
@@ -107,7 +107,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async findUserAddresses(userId: string): Promise<{ walletId: string; address: string; tokenSymbol: string; tokenBalance: number }[]> {
-    const userAddresses = await this.prisma.userAddress.findMany({
+    const userAddresses = await prisma.userAddress.findMany({
       where: { userId },
       include: {
         wallet: true,
@@ -134,7 +134,7 @@ export class PrismaWalletRepository implements WalletRepository {
     phoneNumber: string;
     status: string;
   }): Promise<string> {
-    const transaction = await this.prisma.transaction.create({
+    const transaction = await prisma.transaction.create({
       data: {
         // Required fields for existing Transaction model
         transactionDirection: 'IN',
@@ -170,7 +170,7 @@ export class PrismaWalletRepository implements WalletRepository {
     status: string;
     transactionType: string;
   } | null> {
-    const transaction = await this.prisma.transaction.findFirst({
+    const transaction = await prisma.transaction.findFirst({
       where: { checkoutRequestId },
     });
 
@@ -193,7 +193,7 @@ export class PrismaWalletRepository implements WalletRepository {
   }
 
   async updateTransactionStatus(transactionId: string, status: string): Promise<void> {
-    await this.prisma.transaction.update({
+    await prisma.transaction.update({
       where: { transactionId },
       data: { status },
     });
@@ -227,14 +227,14 @@ export class PrismaWalletRepository implements WalletRepository {
       }
     }
     
-    await this.prisma.transaction.update({
+    await prisma.transaction.update({
       where: { transactionId },
       data: updateData,
     });
   }
 
   async updateUserTokenBalance(userId: string, tokenSymbol: string, amount: number): Promise<void> {
-    await this.prisma.userAddress.updateMany({
+    await prisma.userAddress.updateMany({
       where: {
         userId,
         wallet: {
@@ -265,7 +265,7 @@ export class PrismaWalletRepository implements WalletRepository {
     createdAt: Date;
     updatedAt: Date;
   } | null> {
-    const transaction = await this.prisma.transaction.findUnique({
+    const transaction = await prisma.transaction.findUnique({
       where: { transactionId },
     });
 
@@ -295,23 +295,37 @@ export class PrismaWalletRepository implements WalletRepository {
 
 
   async getUserTokenBalance(userId: string, tokenSymbol: string): Promise<number> {
-    const userTokenBalance = await this.prisma.userTokenBalance.findFirst({
+    // Find the wallet for this token
+    const wallet = await prisma.wallet.findUnique({
       where: {
-        userId,
         tokenSymbol: tokenSymbol.toUpperCase(),
-      },
-      select: {
-        balance: true,
       },
     });
 
-    return userTokenBalance?.balance || 0;
+    if (!wallet) {
+      return 0;
+    }
+
+    // Find the user's address for this wallet
+    const userAddress = await prisma.userAddress.findUnique({
+      where: {
+        userId_walletId: {
+          userId,
+          walletId: wallet.walletId,
+        },
+      },
+      select: {
+        tokenBalance: true,
+      },
+    });
+
+    return userAddress?.tokenBalance || 0;
   }
 
   async findTransactionByCheckoutRequestId(checkoutRequestId: string): Promise<{
     id: string; userId: string; transactionType: string; tokenSymbol: string; fiatAmount: number; cryptoAmount: number; phoneNumber: string; status: string;
   } | null> {
-    const transaction = await this.prisma.transaction.findFirst({
+    const transaction = await prisma.transaction.findFirst({
       where: { checkoutRequestId },
       select: {
         transactionId: true, // This maps to 'id' in the interface
@@ -342,7 +356,7 @@ export class PrismaWalletRepository implements WalletRepository {
   async findTransactionByOriginatorConversationId(originatorConversationId: string): Promise<{
     id: string; userId: string; transactionType: string; tokenSymbol: string; fiatAmount: number; cryptoAmount: number; phoneNumber: string; status: string;
   } | null> {
-    const transaction = await this.prisma.transaction.findFirst({
+    const transaction = await prisma.transaction.findFirst({
       where: { originatorConversationId },
       select: {
         transactionId: true, // This maps to 'id' in the interface

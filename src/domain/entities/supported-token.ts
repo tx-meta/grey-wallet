@@ -104,6 +104,8 @@ export class SupportedToken {
     return [
       SupportedToken.create('Bitcoin', 'BTC', '/icons/bitcoin.svg'),
       SupportedToken.create('Ethereum', 'ETH', '/icons/ethereum.svg'),
+      SupportedToken.create('Tether USD', 'USDT', '/icons/usdt.svg'),
+      SupportedToken.create('USD Coin', 'USDC', '/icons/usdc.svg'),
       SupportedToken.create('Cardano', 'ADA', '/icons/cardano.svg'),
       SupportedToken.create('Solana', 'SOL', '/icons/solana.svg'),
     ];

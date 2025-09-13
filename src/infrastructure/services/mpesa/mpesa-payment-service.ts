@@ -8,6 +8,10 @@ import { B2CPaymentRequest } from './models/b2c-payment-request';
 import { STKPushRequest } from './models/stk-push-request';
 import config from '../../../shared/config';
 import logger from '../../../shared/logging';
+import dotenv from 'dotenv';
+
+// Load environment variables as a fallback
+dotenv.config();
 
 export interface MpesaResponse {
   OriginatorConversationID?: string;
@@ -40,7 +44,11 @@ export class MpesaPaymentService {
   private static apiToken = '';
 
   constructor() {
-    if (!config.mpesa.tokenUrl || !config.mpesa.consumerKey || !config.mpesa.consumerSecret) {
+    const tokenUrl = config.mpesa?.tokenUrl || process.env['DARAJA_TOKEN_URL'];
+    const consumerKey = config.mpesa?.consumerKey || process.env['DARAJA_CONSUMER_KEY'];
+    const consumerSecret = config.mpesa?.consumerSecret || process.env['DARAJA_CONSUMER_SECRET'];
+    
+    if (!tokenUrl || !consumerKey || !consumerSecret) {
       throw new Error('M-Pesa credentials not configured. Please set DARAJA_TOKEN_URL, DARAJA_CONSUMER_KEY, and DARAJA_CONSUMER_SECRET');
     }
   }
@@ -57,11 +65,15 @@ export class MpesaPaymentService {
       currentTime > MpesaPaymentService.tokenExpiry
     ) {
       try {
+        const consumerKey = config.mpesa?.consumerKey || process.env['DARAJA_CONSUMER_KEY'] || '';
+        const consumerSecret = config.mpesa?.consumerSecret || process.env['DARAJA_CONSUMER_SECRET'] || '';
+        const tokenUrl = config.mpesa?.tokenUrl || process.env['DARAJA_TOKEN_URL'] || '';
+        
         const credentials = Buffer.from(
-          `${config.mpesa.consumerKey}:${config.mpesa.consumerSecret}`
+          `${consumerKey}:${consumerSecret}`
         ).toString('base64');
 
-        const response = await fetch(config.mpesa.tokenUrl, {
+        const response = await fetch(tokenUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -253,8 +265,7 @@ export class MpesaPaymentService {
   async initiateB2BPayment(params: {
     partyB: number;
     amount: number;
-    accountReference: number;
-    requester: number;
+    accountReference: string; // Changed to string
     method: 'paybill' | 'buygoods';
     remarks: string;
   }): Promise<MpesaResponse> {
@@ -265,21 +276,41 @@ export class MpesaPaymentService {
         amount: Math.floor(params.amount),
         partyB: params.partyB,
         accountReference: params.accountReference,
-        requester: params.requester,
         method: params.method,
         remarks: params.remarks,
       });
 
-      const response = await fetch(config.mpesa.b2bUrl, {
+      const b2bUrl = config.mpesa?.b2bUrl || process.env['DARAJA_B2B_API_URL'] || '';
+      
+      if (!b2bUrl) {
+        throw new Error('MPESA B2B URL not configured');
+      }
+
+      const requestPayload = b2bRequest.toPascalCase();
+      
+      // Debug log the exact payload being sent to MPESA
+      logger.debug('B2B MPESA request payload', {
+        url: b2bUrl,
+        payload: requestPayload
+      });
+
+      const response = await fetch(b2bUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(b2bRequest.toPascalCase()),
+        body: JSON.stringify(requestPayload),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('B2B MPESA API error response', {
+          status: response.status,
+          statusText: response.statusText,
+          errorBody: errorText,
+          requestPayload
+        });
         throw new Error(`B2B payment request failed: ${response.status} ${response.statusText}`);
       }
 
