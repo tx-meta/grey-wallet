@@ -266,7 +266,7 @@ export class MpesaPaymentService {
     partyB: number;
     amount: number;
     accountReference: string; // Changed to string
-    method: 'paybill' | 'buygoods';
+    method: 'paybill' | 'buygoods' | 'pochi';
     remarks: string;
   }): Promise<MpesaResponse> {
     try {

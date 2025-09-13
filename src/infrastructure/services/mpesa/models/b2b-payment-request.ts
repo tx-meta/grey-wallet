@@ -14,7 +14,7 @@ export interface B2BPaymentRequestParams {
   amount: number;
   partyB: number;
   accountReference: string; // Should be string, not number
-  method: 'paybill' | 'buygoods';
+  method: 'paybill' | 'buygoods' | 'pochi';
   remarks: string;
 }
 
@@ -48,7 +48,15 @@ export class B2BPaymentRequest extends PaymentRequest {
     this.commandID = method === 'paybill' ? 'BusinessPayBill' : 'BusinessBuyGoods';
     // For B2B payments, sender is organization (4) and receiver depends on method
     this.senderIdentifierType = 4; // Organization
-    this.receiverIdentifierType = method === 'paybill' ? 4 : 2; // Organization for paybill, Till for buygoods
+    // Set ReceiverIdentifierType based on method:
+    // 1 = MSISDN (phone number), 2 = Till Number, 4 = Organization Short Code
+    if (method === 'paybill') {
+      this.receiverIdentifierType = 4; // Organization Short Code for paybill
+    } else if (method === 'pochi') {
+      this.receiverIdentifierType = 1; // MSISDN for phone numbers
+    } else {
+      this.receiverIdentifierType = 2; // Till Number for buygoods/till
+    }
     this.remarks = remarks;
     this.queueTimeOutURL = config.mpesa?.b2bTimeoutUrl || process.env['DARAJA_B2B_QUEUE_TIMEOUT_URL'] || '';
     this.resultURL = config.mpesa?.b2bResultUrl || process.env['DARAJA_B2B_RESULT_URL'] || '';

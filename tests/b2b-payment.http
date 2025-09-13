@@ -39,7 +39,7 @@ Content-Type: application/json
   "fiatAmount": 40,
   "recipientType": "paybill",
   "businessNumber": "220220",
-  "accountNumber": "0726367035",
+  "accountNumber": "254726367035",
   "recipientName": "Airtime Vendor"
 }
 

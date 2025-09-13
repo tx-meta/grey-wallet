@@ -97,7 +97,8 @@ export class B2BPaymentServiceImpl implements B2BPaymentService {
         partyB: parseInt(request.businessNumber),
         amount: request.amount,
         accountReference: request.accountNumber || '', // Keep as string
-        method: request.recipientType === 'paybill' ? 'paybill' : 'buygoods',
+        method: request.recipientType === 'paybill' ? 'paybill' : 
+               request.recipientType === 'pochi' ? 'pochi' : 'buygoods',
         remarks: request.description
       });
 
