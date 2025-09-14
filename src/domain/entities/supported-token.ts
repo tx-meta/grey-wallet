@@ -102,12 +102,12 @@ export class SupportedToken {
   // Predefined tokens for the wallet system
   static getDefaultTokens(): SupportedToken[] {
     return [
-      SupportedToken.create('Bitcoin', 'BTC', '/icons/bitcoin.svg'),
-      SupportedToken.create('Ethereum', 'ETH', '/icons/ethereum.svg'),
-      SupportedToken.create('Tether USD', 'USDT', '/icons/usdt.svg'),
-      SupportedToken.create('USD Coin', 'USDC', '/icons/usdc.svg'),
-      SupportedToken.create('Cardano', 'ADA', '/icons/cardano.svg'),
-      SupportedToken.create('Solana', 'SOL', '/icons/solana.svg'),
+      SupportedToken.create('Bitcoin', 'BTC', 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png'),
+      SupportedToken.create('Ethereum', 'ETH', 'https://assets.coingecko.com/coins/images/279/small/ethereum.png'),
+      SupportedToken.create('Tether USD', 'USDT', 'https://assets.coingecko.com/coins/images/325/small/Tether.png'),
+      SupportedToken.create('USD Coin', 'USDC', 'https://assets.coingecko.com/coins/images/6319/small/usdc.png'),
+      SupportedToken.create('Cardano', 'ADA', 'https://assets.coingecko.com/coins/images/975/small/cardano.png'),
+      SupportedToken.create('Solana', 'SOL', 'https://assets.coingecko.com/coins/images/4128/small/solana.png'),
     ];
   }
 
