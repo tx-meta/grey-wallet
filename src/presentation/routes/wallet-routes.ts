@@ -27,6 +27,9 @@ router.get('/overview', walletController.getWalletOverview.bind(walletController
 // GET /api/wallet/addresses - Get all wallet addresses
 router.get('/addresses', walletController.getWalletAddresses.bind(walletController));
 
+// GET /api/wallet/addresses/:tokenSymbol - Get wallet address for specific token
+router.get('/addresses/:tokenSymbol', walletController.getTokenAddress.bind(walletController));
+
 // GET /api/wallet/balance/:tokenSymbol - Get balance for specific token
 router.get('/balance/:tokenSymbol', walletController.getTokenBalance.bind(walletController));
 

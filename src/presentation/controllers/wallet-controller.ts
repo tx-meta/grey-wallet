@@ -298,4 +298,94 @@ export class WalletController {
       });
     }
   }
+
+  /**
+   * GET /api/wallet/addresses/:tokenSymbol
+   * Get wallet address for a specific token
+   */
+  async getTokenAddress(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+        return;
+      }
+
+      const { tokenSymbol } = req.params;
+      if (!tokenSymbol) {
+        res.status(400).json({
+          success: false,
+          message: 'Token symbol is required',
+        });
+        return;
+      }
+
+      logger.info('Token address request received', { userId, tokenSymbol });
+
+      // Reuse the existing getTokenBalanceUseCase to get token information
+      const result = await this.getTokenBalanceUseCase.execute({
+        userId,
+        tokenSymbol: tokenSymbol.toUpperCase(),
+      });
+
+      if (!result.success) {
+        res.status(404).json({
+          success: false,
+          message: result.error,
+        });
+        return;
+      }
+
+      // Extract address information and generate QR code
+      const addressData = result.data!;
+      const qrCode = this.generateQRCode(addressData.address);
+
+      const response = {
+        tokenSymbol: addressData.tokenSymbol,
+        tokenName: addressData.tokenName,
+        tokenIcon: addressData.tokenIcon,
+        address: addressData.address,
+        qrCode,
+        isActive: addressData.isActive,
+        lastUpdated: addressData.lastUpdated,
+      };
+
+      logger.info('Token address retrieved successfully', { 
+        userId, 
+        tokenSymbol,
+        address: addressData.address
+      });
+
+      res.status(200).json({
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      logger.error('Get token address error', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId: req.user?.id,
+        tokenSymbol: req.params['tokenSymbol'] 
+      });
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  private generateQRCode(address: string): string {
+    // Simple QR code generation - in production, use a proper QR code library
+    const svg = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="white"/>
+      <text x="100" y="100" text-anchor="middle" font-family="monospace" font-size="12">
+        ${address}
+      </text>
+    </svg>`;
+    
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+  }
 } 

@@ -30,6 +30,7 @@ model User {
 
     // Relations
     userAddresses UserAddress[]
+    depositTransactions DepositTransaction[]
 
     @@map("users")
 }
@@ -184,4 +185,38 @@ model TreasuryTransaction {
   userTransaction Transaction?    @relation(fields: [userTransactionId], references: [transactionId])
 
   @@map("treasury_transactions")
+}
+
+model DepositTransaction {
+  id                String   @id @default(uuid())
+  userId            String
+  userAddress       String   // The user's deposit address
+  tokenSymbol       String
+  amount            Decimal  @db.Decimal(20, 8)
+  txHash            String   @unique // Blockchain transaction hash
+  blockNumber       BigInt?
+  fromAddress       String   // External sender's address
+  confirmations     Int      @default(0)
+  status            String   @default("pending") // pending, confirmed, failed
+  detectedAt        DateTime @default(now())
+  confirmedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("deposit_transactions")
+}
+
+model BlockchainMonitor {
+  id            String   @id @default(uuid())
+  tokenSymbol   String   @unique
+  lastBlock     BigInt   @default(0)
+  isActive      Boolean  @default(true)
+  lastCheckedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("blockchain_monitors")
 }
