@@ -65,77 +65,131 @@ export class BitcoinListener implements BlockchainListener {
 
   private async checkAddressForDeposits(address: string) {
     try {
-      // Use BlockCypher API to get address transactions
+      // Validate Bitcoin address format first
+      if (!this.isValidBitcoinAddress(address)) {
+        logger.warn(`Invalid Bitcoin address format: ${address}`);
+        return;
+      }
+
+      // Use BlockCypher API to get address information
       const apiKey = this.config.apiKey || process.env['BLOCKCYPHER_API_KEY'];
       const network = process.env['WALLET_NETWORK'] === 'mainnet' ? 'main' : 'test3';
       
-      const url = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/txs`;
+      // Use the basic address endpoint which includes transaction references
+      // This is more reliable than the /txs endpoint
+      let url = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}`;
+      const params = [];
+      
+      if (apiKey) {
+        params.push(`token=${apiKey}`);
+      }
+      
+      // Limit to recent transactions to avoid large responses
+      params.push('limit=50');
+      
+      if (params.length > 0) {
+        url += '?' + params.join('&');
+      }
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
-      
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      }
+
+      logger.debug(`Fetching Bitcoin address info from: ${url.replace(/token=[^&]+/, 'token=***')}`);
 
       const response = await fetch(url, { headers });
       
       if (!response.ok) {
-        throw new Error(`BlockCypher API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`BlockCypher API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json() as any;
       
-      if (data.txs && Array.isArray(data.txs)) {
-        for (const tx of data.txs) {
-          await this.processBitcoinTransaction(address, tx);
+      // Process transaction references instead of full transactions
+      if (data.txrefs && Array.isArray(data.txrefs)) {
+        logger.debug(`Found ${data.txrefs.length} transaction references for address ${address}`);
+        for (const txref of data.txrefs) {
+          // Only process incoming transactions (where this address received funds)
+          if (txref.tx_output_n >= 0) {
+            await this.processBitcoinTransactionRef(address, txref);
+          }
         }
+      } else {
+        logger.debug(`No transaction references found for address ${address}`);
       }
     } catch (error) {
       logger.error(`Error fetching transactions for BTC address ${address}:`, error);
     }
   }
 
-  private async processBitcoinTransaction(address: string, tx: any) {
+  private isValidBitcoinAddress(address: string): boolean {
+    // Check for minimum length and basic format
+    if (!address || address.length < 26 || address.length > 62) {
+      return false;
+    }
+
+    // Basic Bitcoin address validation
+    // Mainnet addresses: Legacy (1...), SegWit (3...), Bech32 (bc1...)
+    // Testnet addresses: Legacy (m..., n...), SegWit (2...), Bech32 (tb1...)
+    const mainnetRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$/;
+    const testnetRegex = /^[mn2][a-km-zA-HJ-NP-Z1-9]{25,34}$|^tb1[a-z0-9]{39,59}$/;
+    
+    const isValid = mainnetRegex.test(address) || testnetRegex.test(address);
+    
+    if (!isValid) {
+      logger.warn(`Bitcoin address validation failed for: ${address} (length: ${address.length})`);
+    }
+    
+    return isValid;
+  }
+
+  private async processBitcoinTransactionRef(address: string, txref: any) {
     try {
-      // Check if this transaction sends BTC to our address
-      const outputs = tx.outputs || [];
-      let totalReceived = 0;
-      let fromAddress = 'unknown';
-
-      for (const output of outputs) {
-        if (output.addresses && output.addresses.includes(address)) {
-          totalReceived += output.value;
-        }
+      // txref contains: tx_hash, block_height, tx_input_n, tx_output_n, value, ref_balance, confirmations, confirmed
+      
+      // Skip if this is not an incoming transaction (tx_output_n should be >= 0 for received funds)
+      if (txref.tx_output_n < 0) {
+        return;
       }
 
-      // Get input addresses (senders)
-      const inputs = tx.inputs || [];
-      if (inputs.length > 0 && inputs[0].addresses) {
-        fromAddress = inputs[0].addresses[0];
+      // Check if we've already processed this transaction
+      const lastProcessedBlock = this.lastCheckedBlocks.get(address) || 0;
+      if (txref.block_height && txref.block_height <= lastProcessedBlock) {
+        return; // Already processed
       }
 
-      if (totalReceived > 0) {
-        // Convert satoshis to BTC
-        const amount = totalReceived / 100000000;
+      // Convert satoshis to BTC
+      const amount = txref.value / 100000000;
+      
+      if (amount > 0) {
+        // For transaction references, we don't have sender address immediately
+        // We could fetch full transaction details if needed, but for now use 'unknown'
+        const fromAddress = 'unknown';
         
         await this.onDeposit({
-          txHash: tx.hash,
+          txHash: txref.tx_hash,
           toAddress: address,
           fromAddress: fromAddress,
           amount: amount.toString(),
           tokenSymbol: 'BTC',
-          blockNumber: tx.block_height,
-          confirmations: tx.confirmations || 0,
-          timestamp: new Date(tx.received)
+          blockNumber: txref.block_height,
+          confirmations: txref.confirmations || 0,
+          timestamp: new Date(txref.confirmed || Date.now())
         });
 
-        logger.info(`Bitcoin deposit detected: ${amount} BTC to ${address}`);
+        logger.info(`Bitcoin deposit detected: ${amount} BTC to ${address} (tx: ${txref.tx_hash})`);
+        
+        // Update last processed block
+        if (txref.block_height) {
+          this.lastCheckedBlocks.set(address, txref.block_height);
+        }
       }
     } catch (error) {
-      logger.error(`Error processing Bitcoin transaction ${tx.hash}:`, error);
+      logger.error(`Error processing Bitcoin transaction reference ${txref.tx_hash}:`, error);
     }
   }
+
 
   async stop(): Promise<void> {
     if (!this.isListenerRunning) {

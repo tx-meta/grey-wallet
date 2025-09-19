@@ -3,6 +3,7 @@ import { EVMListener } from './evm-listener';
 import { SolanaListener } from './solana-listener';
 import { BitcoinListener } from './bitcoin-listener';
 import { CardanoListener } from './cardano-listener';
+import { ConfirmationTracker } from './confirmation-tracker';
 import { DepositRepository } from '../../../domain/repositories/deposit-repository';
 import { WalletRepository } from '../../../domain/repositories/wallet-repository';
 import { NotificationService } from '../../../application/interfaces/notification-service';
@@ -12,6 +13,7 @@ import logger from '../../../shared/logging';
 export class BlockchainMonitorService {
   private listeners: Map<string, BlockchainListener> = new Map();
   private processDepositUseCase: ProcessCryptoDepositUseCase;
+  private confirmationTracker: ConfirmationTracker;
 
   constructor(
     private walletRepository: WalletRepository,
@@ -23,6 +25,14 @@ export class BlockchainMonitorService {
       this.depositRepository,
       this.walletRepository,
       this.notificationService
+    );
+
+    // Initialize the ConfirmationTracker
+    this.confirmationTracker = new ConfirmationTracker(
+      this.depositRepository,
+      this.walletRepository,
+      this.notificationService,
+      30000 // Check every 30 seconds
     );
     
     this.initializeListeners();
@@ -126,10 +136,28 @@ export class BlockchainMonitorService {
         logger.error(`Failed to start ${name} listener:`, error);
       }
     }
+
+    // Start confirmation tracker
+    try {
+      await this.confirmationTracker.start();
+      logger.info('Confirmation tracker started successfully');
+    } catch (error) {
+      logger.error('Failed to start confirmation tracker:', error);
+    }
+
+    logger.info('All blockchain listeners started successfully');
   }
 
   async stopAll(): Promise<void> {
     logger.info('Stopping all blockchain listeners...');
+    
+    // Stop confirmation tracker first
+    try {
+      await this.confirmationTracker.stop();
+      logger.info('Confirmation tracker stopped successfully');
+    } catch (error) {
+      logger.error('Failed to stop confirmation tracker:', error);
+    }
     
     for (const [name, listener] of this.listeners) {
       try {
@@ -215,7 +243,11 @@ export class BlockchainMonitorService {
   private async getUserAddresses(tokenSymbol: string): Promise<string[]> {
     try {
       const addresses = await this.walletRepository.getAllUserAddresses(tokenSymbol);
-      return addresses.map((addr: any) => addr.address.toLowerCase());
+      // Only convert EVM addresses to lowercase, Bitcoin addresses are case-sensitive
+      return addresses.map((addr: any) => {
+        const isEVMToken = ['ETH', 'USDT', 'USDC'].includes(tokenSymbol.toUpperCase());
+        return isEVMToken ? addr.address.toLowerCase() : addr.address;
+      });
     } catch (error) {
       logger.error(`Failed to get user addresses for ${tokenSymbol}:`, error);
       return [];

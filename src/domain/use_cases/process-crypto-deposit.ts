@@ -215,7 +215,7 @@ export class ProcessCryptoDepositUseCase {
     const confirmations: Record<string, number> = {
       'BTC': 6,
       'ETH': 12,
-      'USDT': 12,
+      'USDT': 2, // Temporarily lowered for testing
       'USDC': 12,
       'ADA': 15,
       'SOL': 32

@@ -95,13 +95,15 @@ export class EVMListener implements BlockchainListener {
       },
       { 
         symbol: 'USDC', 
-        address: process.env['USDC_CONTRACT_ADDRESS'] || '0xA0b86a33E6441E8aBBf2C4E2b0eFb5D5d8F8F8F8', 
-        decimals: 18 
+        // Sepolia testnet USDC contract address as default
+        address: process.env['USDC_CONTRACT_ADDRESS'] || '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', 
+        decimals: 6  // USDC uses 6 decimals, not 18
       }
     ];
 
     for (const config of tokenConfigs) {
-      if (!config.address || config.address === '0xA0b86a33E6441E8aBBf2C4E2b0eFb5D5d8F8F8F8') {
+      // Only skip if no address is provided, not if it's a valid contract address
+      if (!config.address) {
         logger.warn(`Skipping ${config.symbol} - no contract address configured`);
         continue;
       }
