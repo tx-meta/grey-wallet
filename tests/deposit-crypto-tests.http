@@ -1,0 +1,663 @@
+### ========================================
+### CRYPTO DEPOSIT API TESTS
+### ========================================
+### This file contains comprehensive tests for the Crypto Deposit API endpoints
+### Make sure to set up your environment variables and authentication tokens
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+@authToken = {{login.response.body.data.session.accessToken}}
+@refreshToken = 2arrbaxgbyfl
+@currentUserId = 66607a7d-f4ee-406a-8ad2-cfbac4ac730a
+@testDepositId = deposit-test-id-123
+
+### ========================================
+### AUTHENTICATION SETUP
+### ========================================
+
+### 1. Sign In to get auth token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "harunm28@gmail.com",
+  "password": "TestPassword123!"
+}
+
+### ========================================
+### DEPOSIT ADDRESSES TESTS (Authenticated)
+### ========================================
+
+### 2. Get User's Deposit Addresses
+GET {{baseUrl}}/api/deposits/addresses
+Authorization: Bearer {{login.response.body.data.session.accessToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "user-uuid",
+###     "addresses": [
+###       {
+###         "tokenSymbol": "BTC",
+###         "tokenName": "Bitcoin",
+###         "address": "bc1q...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.00000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       },
+###       {
+###         "tokenSymbol": "ETH",
+###         "tokenName": "Ethereum",
+###         "address": "0x...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.000000000000000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       },
+###       {
+###         "tokenSymbol": "USDT",
+###         "tokenName": "Tether USD",
+###         "address": "0x...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       },
+###       {
+###         "tokenSymbol": "USDC",
+###         "tokenName": "USD Coin",
+###         "address": "0x...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       },
+###       {
+###         "tokenSymbol": "ADA",
+###         "tokenName": "Cardano",
+###         "address": "addr1...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       },
+###       {
+###         "tokenSymbol": "SOL",
+###         "tokenName": "Solana",
+###         "address": "...",
+###         "qrCode": "data:image/png;base64,...",
+###         "tokenBalance": 0.000000000,
+###         "createdAt": "2024-01-01T00:00:00.000Z"
+###       }
+###     ],
+###     "totalAddresses": 6,
+###     "supportedTokens": ["BTC", "ETH", "USDT", "USDC", "ADA", "SOL"]
+###   }
+### }
+
+### 3. Get Deposit Addresses (Unauthenticated) - Should Fail
+GET {{baseUrl}}/api/deposits/addresses
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### DEPOSIT HISTORY TESTS (Authenticated)
+### ========================================
+
+### 4. Get User's Deposit History
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer {{login.response.body.data.session.accessToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": "user-uuid",
+###     "deposits": [
+###       {
+###         "id": "deposit-uuid",
+###         "tokenSymbol": "BTC",
+###         "tokenName": "Bitcoin",
+###         "amount": 0.001,
+###         "amountFormatted": "0.00100000 BTC",
+###         "txHash": "0x1234567890abcdef...",
+###         "fromAddress": "bc1q...",
+###         "toAddress": "bc1q...",
+###         "blockNumber": 850000,
+###         "confirmations": 6,
+###         "requiredConfirmations": 3,
+###         "status": "confirmed",
+###         "detectedAt": "2024-01-01T12:00:00.000Z",
+###         "confirmedAt": "2024-01-01T12:30:00.000Z",
+###         "createdAt": "2024-01-01T12:00:00.000Z",
+###         "updatedAt": "2024-01-01T12:30:00.000Z"
+###       }
+###     ],
+###     "totalDeposits": 1,
+###     "totalAmount": {
+###       "BTC": 0.001,
+###       "ETH": 0,
+###       "USDT": 0,
+###       "USDC": 0,
+###       "ADA": 0,
+###       "SOL": 0
+###     },
+###     "pagination": {
+###       "page": 1,
+###       "limit": 10,
+###       "total": 1,
+###       "totalPages": 1
+###     }
+###   }
+### }
+
+### 5. Get Deposit History with Pagination
+GET {{baseUrl}}/api/deposits/history?page=1&limit=5&tokenSymbol=BTC&status=confirmed
+Authorization: Bearer {{login.response.body.data.session.accessToken}}
+Content-Type: {{contentType}}
+
+### 6. Get Deposit History (Unauthenticated) - Should Fail
+GET {{baseUrl}}/api/deposits/history
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### SPECIFIC DEPOSIT DETAILS TESTS (Authenticated)
+### ========================================
+
+### 7. Get Specific Deposit Details
+GET {{baseUrl}}/api/deposits/{{testDepositId}}
+Authorization: Bearer {{login.response.body.data.session.accessToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "id": "deposit-uuid",
+###     "userId": "user-uuid",
+###     "tokenSymbol": "BTC",
+###     "tokenName": "Bitcoin",
+###     "amount": 0.001,
+###     "amountFormatted": "0.00100000 BTC",
+###     "txHash": "0x1234567890abcdef...",
+###     "fromAddress": "bc1q...",
+###     "toAddress": "bc1q...",
+###     "blockNumber": 850000,
+###     "confirmations": 6,
+###     "requiredConfirmations": 3,
+###     "status": "confirmed",
+###     "detectedAt": "2024-01-01T12:00:00.000Z",
+###     "confirmedAt": "2024-01-01T12:30:00.000Z",
+###     "createdAt": "2024-01-01T12:00:00.000Z",
+###     "updatedAt": "2024-01-01T12:30:00.000Z",
+###     "blockchainExplorerUrl": "https://blockstream.info/tx/0x1234567890abcdef...",
+###     "networkFee": 0.00001,
+###     "networkFeeCurrency": "BTC"
+###   }
+### }
+
+### 8. Get Non-existent Deposit Details
+GET {{baseUrl}}/api/deposits/non-existent-id
+Authorization: Bearer {{login.response.body.data.session.accessToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Deposit not found"
+### }
+
+### 9. Get Deposit Details (Unauthenticated) - Should Fail
+GET {{baseUrl}}/api/deposits/{{testDepositId}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### ========================================
+### BLOCKCHAIN WEBHOOK TESTS (Public)
+### ========================================
+
+### 10. Health Check for Webhook Endpoint
+GET {{baseUrl}}/api/webhooks/blockchain/health
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Blockchain webhook service is healthy",
+###   "timestamp": "2024-01-01T12:00:00.000Z",
+###   "services": {
+###     "evmListener": "running",
+###     "solanaListener": "running",
+###     "bitcoinListener": "running",
+###     "cardanoListener": "running"
+###   }
+### }
+
+### 11. Test Webhook - Bitcoin Deposit (Simulated)
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+X-Webhook-Source: blockcypher
+
+{
+  "event": "unconfirmed-tx",
+  "hash": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "addresses": ["bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"],
+  "total": 100000,
+  "fees": 1000,
+  "size": 250,
+  "preference": "medium",
+  "relayed_by": "127.0.0.1:8333",
+  "received": "2024-01-01T12:00:00Z",
+  "ver": 1,
+  "double_spend": false,
+  "vin_sz": 1,
+  "vout_sz": 2,
+  "confirmations": 0,
+  "inputs": [
+    {
+      "prev_hash": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "output_index": 0,
+      "script": "",
+      "output_value": 101000,
+      "sequence": 4294967295,
+      "addresses": ["bc1q9cgfpgqyh8t9hqy7qg8qj7qg8qj7qg8qj7qg8qj"],
+      "script_type": "pay-to-witness-pubkey-hash",
+      "age": 850000
+    }
+  ],
+  "outputs": [
+    {
+      "value": 100000,
+      "script": "0014751e76dc81b7e1b4c6c1d3b7b7b7b7b7b7b7b7b7",
+      "addresses": ["bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"],
+      "script_type": "pay-to-witness-pubkey-hash"
+    },
+    {
+      "value": 0,
+      "script": "6a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9",
+      "script_type": "null-data",
+      "data_hex": "aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9"
+    }
+  ]
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Webhook processed successfully",
+###   "data": {
+###     "processed": true,
+###     "depositId": "generated-deposit-uuid",
+###     "userId": "user-uuid",
+###     "tokenSymbol": "BTC",
+###     "amount": 0.001,
+###     "status": "pending"
+###   }
+### }
+
+### 12. Test Webhook - Ethereum Deposit (Simulated)
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+X-Webhook-Source: alchemy
+
+{
+  "webhookId": "wh_abc123def456",
+  "id": "whevt_xyz789abc123",
+  "createdAt": "2024-01-01T12:00:00.000Z",
+  "type": "ADDRESS_ACTIVITY",
+  "event": {
+    "network": "ETH_MAINNET",
+    "activity": [
+      {
+        "fromAddress": "0x1234567890123456789012345678901234567890",
+        "toAddress": "0x0987654321098765432109876543210987654321",
+        "blockNum": "0x12d687",
+        "hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        "value": 1.5,
+        "asset": "ETH",
+        "category": "external",
+        "rawContract": {
+          "rawValue": "0x14d1120d7b160000",
+          "address": null,
+          "decimals": 18
+        },
+        "log": {
+          "address": "0x0987654321098765432109876543210987654321",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x0000000000000000000000001234567890123456789012345678901234567890",
+            "0x0000000000000000000000000987654321098765432109876543210987654321"
+          ],
+          "data": "0x14d1120d7b160000",
+          "blockNumber": "0x12d687",
+          "transactionHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+          "transactionIndex": "0x5",
+          "blockHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "logIndex": "0x2",
+          "removed": false
+        }
+      }
+    ]
+  }
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Webhook processed successfully",
+###   "data": {
+###     "processed": true,
+###     "depositId": "generated-deposit-uuid",
+###     "userId": "user-uuid",
+###     "tokenSymbol": "ETH",
+###     "amount": 1.5,
+###     "status": "pending"
+###   }
+### }
+
+### 13. Test Webhook - USDT Deposit (Simulated)
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+X-Webhook-Source: alchemy
+
+{
+  "webhookId": "wh_usdt123def456",
+  "id": "whevt_usdt789abc123",
+  "createdAt": "2024-01-01T12:00:00.000Z",
+  "type": "ADDRESS_ACTIVITY",
+  "event": {
+    "network": "ETH_MAINNET",
+    "activity": [
+      {
+        "fromAddress": "0x1234567890123456789012345678901234567890",
+        "toAddress": "0x0987654321098765432109876543210987654321",
+        "blockNum": "0x12d687",
+        "hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        "value": 100.0,
+        "asset": "USDT",
+        "category": "erc20",
+        "rawContract": {
+          "rawValue": "0x5f5e100",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        "log": {
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x0000000000000000000000001234567890123456789012345678901234567890",
+            "0x0000000000000000000000000987654321098765432109876543210987654321"
+          ],
+          "data": "0x5f5e100",
+          "blockNumber": "0x12d687",
+          "transactionHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+          "transactionIndex": "0x5",
+          "blockHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "logIndex": "0x2",
+          "removed": false
+        }
+      }
+    ]
+  }
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Webhook processed successfully",
+###   "data": {
+###     "processed": true,
+###     "depositId": "generated-deposit-uuid",
+###     "userId": "user-uuid",
+###     "tokenSymbol": "USDT",
+###     "amount": 100.0,
+###     "status": "pending"
+###   }
+### }
+
+### 14. Test Webhook - Invalid Payload
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+
+{
+  "invalid": "payload"
+}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Invalid webhook payload"
+### }
+
+### 15. Test Webhook - Missing Required Headers
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+
+{
+  "event": "deposit",
+  "txHash": "0x123",
+  "amount": 1.0,
+  "tokenSymbol": "ETH"
+}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Missing required webhook headers"
+### }
+
+### ========================================
+### ERROR HANDLING TESTS
+### ========================================
+
+### 16. Invalid Auth Token
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer invalid_token_here
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 17. Expired Auth Token
+GET {{baseUrl}}/api/deposits/addresses
+Authorization: Bearer expired_token_here
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 18. Missing Auth Header
+GET {{baseUrl}}/api/deposits/history
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Authentication required"
+### }
+
+### 19. Invalid Deposit ID Format
+GET {{baseUrl}}/api/deposits/invalid-uuid-format
+Authorization: Bearer {{authToken}}
+Content-Type: {{contentType}}
+
+### Expected Response:
+### {
+###   "success": false,
+###   "message": "Invalid deposit ID format"
+### }
+
+### ========================================
+### PERFORMANCE TESTS
+### ========================================
+
+### 20. Multiple Concurrent Requests
+# Run these requests simultaneously to test performance
+
+### Request 1 - Get Addresses
+GET {{baseUrl}}/api/deposits/addresses
+Authorization: Bearer {{authToken}}
+
+### Request 2 - Get History
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer {{authToken}}
+
+### Request 3 - Get Specific Deposit
+GET {{baseUrl}}/api/deposits/{{testDepositId}}
+Authorization: Bearer {{authToken}}
+
+### Request 4 - Health Check
+GET {{baseUrl}}/api/webhooks/blockchain/health
+
+### ========================================
+### INTEGRATION TESTS
+### ========================================
+
+### 21. Complete Deposit Flow Test
+# 1. Sign in
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!"
+}
+
+# 2. Get deposit addresses
+GET {{baseUrl}}/api/deposits/addresses
+Authorization: Bearer {{authToken}}
+
+# 3. Get current deposit history
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer {{authToken}}
+
+# 4. Simulate a webhook deposit
+POST {{baseUrl}}/api/webhooks/blockchain/deposit
+Content-Type: {{contentType}}
+X-Webhook-Source: test
+
+{
+  "event": "deposit",
+  "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "fromAddress": "0x1234567890123456789012345678901234567890",
+  "toAddress": "0x0987654321098765432109876543210987654321",
+  "amount": 0.5,
+  "tokenSymbol": "ETH",
+  "blockNumber": 18000000,
+  "confirmations": 1
+}
+
+# 5. Check updated deposit history
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer {{authToken}}
+
+### ========================================
+### ENVIRONMENT VARIABLES
+### ========================================
+
+### Set these variables in your REST Client settings or use them directly
+
+@testEmail = test@example.com
+@testPassword = TestPassword123!
+@testUserId = your_user_id_here
+@webhookSecret = your_webhook_secret_here
+
+### ========================================
+### QUICK TEST TEMPLATES
+### ========================================
+
+### Quick Deposit Addresses Check
+GET {{baseUrl}}/api/deposits/addresses
+Authorization: Bearer {{authToken}}
+
+### Quick Deposit History Check
+GET {{baseUrl}}/api/deposits/history
+Authorization: Bearer {{authToken}}
+
+### Quick Webhook Health Check
+GET {{baseUrl}}/api/webhooks/blockchain/health
+
+### Quick Deposit Details Check
+GET {{baseUrl}}/api/deposits/{{testDepositId}}
+Authorization: Bearer {{authToken}}
+
+### ========================================
+### NOTES
+### ========================================
+
+### Authentication:
+### - All /api/deposits/* endpoints require authentication
+### - Use the Bearer token from sign-in response
+### - /api/webhooks/blockchain/* endpoints are public (no auth required)
+
+### Supported Tokens:
+### - BTC (Bitcoin)
+### - ETH (Ethereum)
+### - USDT (Tether USD - ERC20)
+### - USDC (USD Coin - ERC20)
+### - ADA (Cardano)
+### - SOL (Solana)
+
+### Deposit Statuses:
+### - pending: Deposit detected but not yet confirmed
+### - confirmed: Deposit has required confirmations
+### - failed: Deposit failed or was rejected
+
+### Webhook Sources:
+### - alchemy: For Ethereum, USDT, USDC deposits
+### - blockcypher: For Bitcoin deposits
+### - blockfrost: For Cardano deposits
+### - solana: For Solana deposits
+
+### Response Format:
+### - All responses follow the standard format: { success: boolean, data?: any, message?: string }
+### - Error responses include error details and error codes
+### - Success responses include the requested data
+
+### Testing Tips:
+### - Test both authenticated and unauthenticated scenarios
+### - Verify error handling for invalid deposit IDs
+### - Check response format consistency
+### - Test webhook payloads from different providers
+### - Verify QR code generation for deposit addresses
+### - Test pagination for deposit history
+### - Check concurrent request handling
+### - Verify deposit status updates through webhooks
+
+### Blockchain Explorers:
+### - Bitcoin: https://blockstream.info/tx/
+### - Ethereum: https://etherscan.io/tx/
+### - USDT/USDC: https://etherscan.io/tx/
+### - Cardano: https://cardanoscan.io/transaction/
+### - Solana: https://explorer.solana.com/tx/
+
+### Required Confirmations:
+### - BTC: 3 confirmations
+### - ETH: 12 confirmations
+### - USDT: 12 confirmations
+### - USDC: 12 confirmations
+### - ADA: 20 confirmations
+### - SOL: 32 confirmations
