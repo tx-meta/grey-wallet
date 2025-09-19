@@ -190,7 +190,9 @@ export class Container {
     
     // Initialize Blockchain Monitor Service
     this.services.set('BlockchainMonitorService', new BlockchainMonitorService(
-      this.services.get('WalletRepository')
+      this.services.get('WalletRepository'),
+      this.services.get('DepositRepository'),
+      this.services.get('NotificationService')
     ));
     console.log('✅ BlockchainMonitorService initialized');
   }

@@ -115,18 +115,46 @@ export class EVMListener implements BlockchainListener {
 
         contract.on('Transfer', async (from: string, to: string, value: bigint, event: any) => {
           try {
+            logger.debug('ERC20 Transfer event received', {
+              from,
+              to,
+              value: value.toString(),
+              symbol: config.symbol
+            });
+
+            // Extract transaction hash from the correct location
+            const txHash = event.log?.transactionHash || event.transactionHash;
+            const blockNumber = event.log?.blockNumber || event.blockNumber || 0;
+
+            // Validate event data
+            if (!txHash) {
+              logger.error('Missing transaction hash in Transfer event', { 
+                eventKeys: Object.keys(event),
+                logKeys: event.log ? Object.keys(event.log) : 'no log object'
+              });
+              return;
+            }
+
             // Check if this address belongs to any user
             const userAddresses = await this.getUserAddresses(config.symbol);
             if (userAddresses.includes(to.toLowerCase())) {
               const amount = ethers.formatUnits(value, config.decimals);
               
+              logger.info('Processing USDT deposit', {
+                txHash,
+                from,
+                to,
+                amount,
+                blockNumber
+              });
+              
               await this.onDeposit({
-                txHash: event.transactionHash,
+                txHash,
                 toAddress: to,
                 fromAddress: from,
                 amount,
                 tokenSymbol: config.symbol,
-                blockNumber: event.blockNumber,
+                blockNumber,
                 confirmations: 1,
                 timestamp: new Date()
               });

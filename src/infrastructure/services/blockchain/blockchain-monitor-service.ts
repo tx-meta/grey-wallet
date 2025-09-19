@@ -3,21 +3,27 @@ import { EVMListener } from './evm-listener';
 import { SolanaListener } from './solana-listener';
 import { BitcoinListener } from './bitcoin-listener';
 import { CardanoListener } from './cardano-listener';
-// import { DepositRepository } from '../../domain/repositories/deposit-repository';
-// import { WalletRepository } from '../../domain/repositories/wallet-repository';
-// import { UserRepository } from '../../domain/repositories/user-repository';
-// import { NotificationService } from '../../application/interfaces/notification-service';
-// import { ProcessCryptoDepositUseCase } from '../../domain/use_cases/process-crypto-deposit';
+import { DepositRepository } from '../../../domain/repositories/deposit-repository';
+import { WalletRepository } from '../../../domain/repositories/wallet-repository';
+import { NotificationService } from '../../../application/interfaces/notification-service';
+import { ProcessCryptoDepositUseCase } from '../../../domain/use_cases/process-crypto-deposit';
 import logger from '../../../shared/logging';
 
 export class BlockchainMonitorService {
   private listeners: Map<string, BlockchainListener> = new Map();
-  private processDepositUseCase: any;
+  private processDepositUseCase: ProcessCryptoDepositUseCase;
 
   constructor(
-    private walletRepository: any
+    private walletRepository: WalletRepository,
+    private depositRepository: DepositRepository,
+    private notificationService: NotificationService
   ) {
-    this.processDepositUseCase = null; // Will be initialized later
+    // Initialize the ProcessCryptoDepositUseCase
+    this.processDepositUseCase = new ProcessCryptoDepositUseCase(
+      this.depositRepository,
+      this.walletRepository,
+      this.notificationService
+    );
     
     this.initializeListeners();
   }
@@ -174,13 +180,24 @@ export class BlockchainMonitorService {
         toAddress: event.toAddress
       });
 
+      // Validate required fields
+      if (!event.txHash) {
+        logger.error('Missing txHash in deposit event', { event });
+        return;
+      }
+
+      if (!event.toAddress || !event.fromAddress) {
+        logger.error('Missing address information in deposit event', { event });
+        return;
+      }
+
       const result = await this.processDepositUseCase.execute({
         txHash: event.txHash,
         toAddress: event.toAddress,
         fromAddress: event.fromAddress,
         amount: event.amount,
         tokenSymbol: event.tokenSymbol,
-        blockNumber: event.blockNumber,
+        blockNumber: event.blockNumber || 0,
         confirmations: event.confirmations
       });
 
