@@ -1,0 +1,753 @@
+{
+  "info": {
+    "name": "Crypto Deposit API",
+    "description": "Comprehensive API collection for testing the Crypto Deposit feature including authentication, deposit addresses, deposit history, and blockchain webhooks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:3000');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testUserId",
+      "value": "66607a7d-f4ee-406a-8ad2-cfbac4ac730a",
+      "type": "string"
+    },
+    {
+      "key": "testDepositId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "webhookSecret",
+      "value": "your-webhook-secret-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has access token', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data.session.accessToken).to.exist;",
+                  "    ",
+                  "    // Store the access token for other requests",
+                  "    pm.environment.set('accessToken', responseJson.data.session.accessToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"muhindi.kn@gmail.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate user and get access token for protected endpoints"
+          }
+        }
+      ],
+      "description": "Authentication endpoints for getting access tokens"
+    },
+    {
+      "name": "Deposit Addresses",
+      "item": [
+        {
+          "name": "Get User Deposit Addresses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response structure is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('userId');",
+                  "    pm.expect(responseJson.data).to.have.property('addresses');",
+                  "    pm.expect(responseJson.data.addresses).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Address objects have required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data.addresses.length > 0) {",
+                  "        const address = responseJson.data.addresses[0];",
+                  "        pm.expect(address).to.have.property('tokenSymbol');",
+                  "        pm.expect(address).to.have.property('tokenName');",
+                  "        pm.expect(address).to.have.property('address');",
+                  "        pm.expect(address).to.have.property('qrCode');",
+                  "        pm.expect(address).to.have.property('tokenBalance');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "addresses"
+              ]
+            },
+            "description": "Get all deposit addresses for the authenticated user across all supported tokens"
+          }
+        }
+      ],
+      "description": "Endpoints for managing user deposit addresses"
+    },
+    {
+      "name": "Deposit History",
+      "item": [
+        {
+          "name": "Get All Deposit History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response structure is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('deposits');",
+                  "    pm.expect(responseJson.data).to.have.property('pagination');",
+                  "    pm.expect(responseJson.data.deposits).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Store first deposit ID for other tests', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data.deposits.length > 0) {",
+                  "        pm.environment.set('testDepositId', responseJson.data.deposits[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "history"
+              ]
+            },
+            "description": "Get all deposit history for the authenticated user"
+          }
+        },
+        {
+          "name": "Get Filtered Deposit History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response respects pagination', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.deposits.length).to.be.at.most(5);",
+                  "    pm.expect(responseJson.data.pagination.limit).to.equal(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/history?page=1&limit=5&tokenSymbol=USDT&status=confirmed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (1-based)"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "tokenSymbol",
+                  "value": "USDT",
+                  "description": "Filter by token symbol"
+                },
+                {
+                  "key": "status",
+                  "value": "confirmed",
+                  "description": "Filter by deposit status"
+                }
+              ]
+            },
+            "description": "Get filtered deposit history with pagination and filters"
+          }
+        }
+      ],
+      "description": "Endpoints for retrieving deposit transaction history"
+    },
+    {
+      "name": "Deposit Details",
+      "item": [
+        {
+          "name": "Get Specific Deposit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has deposit details', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('deposit');",
+                  "    pm.expect(responseJson.data.deposit).to.have.property('id');",
+                  "    pm.expect(responseJson.data.deposit).to.have.property('txHash');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/{{testDepositId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "{{testDepositId}}"
+              ]
+            },
+            "description": "Get details of a specific deposit by ID"
+          }
+        },
+        {
+          "name": "Get Non-Existent Deposit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/non-existent-id-12345",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "non-existent-id-12345"
+              ]
+            },
+            "description": "Test error handling for non-existent deposit ID"
+          }
+        }
+      ],
+      "description": "Endpoints for retrieving specific deposit details"
+    },
+    {
+      "name": "Blockchain Webhooks",
+      "item": [
+        {
+          "name": "Webhook Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health check response is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.message).to.include('healthy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/blockchain/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "blockchain",
+                "health"
+              ]
+            },
+            "description": "Check if the blockchain webhook endpoint is healthy"
+          }
+        },
+        {
+          "name": "Bitcoin Deposit Webhook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Webhook processed successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Signature",
+                "value": "{{webhookSecret}}",
+                "description": "Webhook signature for verification"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"transaction\",\n  \"network\": \"bitcoin\",\n  \"data\": {\n    \"txid\": \"a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456\",\n    \"block_height\": 750000,\n    \"confirmations\": 3,\n    \"inputs\": [\n      {\n        \"addresses\": [\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"],\n        \"value\": 100000000\n      }\n    ],\n    \"outputs\": [\n      {\n        \"addresses\": [\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\"],\n        \"value\": 50000000\n      },\n      {\n        \"addresses\": [\"1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2\"],\n        \"value\": 49990000\n      }\n    ],\n    \"fees\": 10000,\n    \"timestamp\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/blockchain/deposit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "blockchain",
+                "deposit"
+              ]
+            },
+            "description": "Simulate a Bitcoin deposit webhook from external service"
+          }
+        },
+        {
+          "name": "Ethereum Deposit Webhook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Webhook processed successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Signature",
+                "value": "{{webhookSecret}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"transaction\",\n  \"network\": \"ethereum\",\n  \"data\": {\n    \"hash\": \"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\",\n    \"blockNumber\": 18500000,\n    \"blockHash\": \"0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890\",\n    \"transactionIndex\": 45,\n    \"from\": \"0x742d35Cc6634C0532925a3b8D8BA9f2C52B15c00\",\n    \"to\": \"0x217F087bEd898eDC858122d838a698B0B0acAF49\",\n    \"value\": \"1000000000000000000\",\n    \"gas\": \"21000\",\n    \"gasPrice\": \"20000000000\",\n    \"gasUsed\": \"21000\",\n    \"confirmations\": 12,\n    \"timestamp\": \"2024-01-15T10:35:00.000Z\",\n    \"status\": \"success\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/blockchain/deposit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "blockchain",
+                "deposit"
+              ]
+            },
+            "description": "Simulate an Ethereum deposit webhook from external service"
+          }
+        },
+        {
+          "name": "USDT Deposit Webhook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Webhook processed successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Signature",
+                "value": "{{webhookSecret}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"erc20_transfer\",\n  \"network\": \"ethereum\",\n  \"data\": {\n    \"hash\": \"0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890\",\n    \"blockNumber\": 18500001,\n    \"blockHash\": \"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\",\n    \"transactionIndex\": 78,\n    \"from\": \"0x742d35Cc6634C0532925a3b8D8BA9f2C52B15c00\",\n    \"to\": \"0x217F087bEd898eDC858122d838a698B0B0acAF49\",\n    \"contractAddress\": \"0xBbFf793a9A074408ADD8F43FC182B56e60bf1b21\",\n    \"value\": \"1000000\",\n    \"decimals\": 6,\n    \"symbol\": \"USDT\",\n    \"name\": \"Tether USD\",\n    \"confirmations\": 15,\n    \"timestamp\": \"2024-01-15T10:40:00.000Z\",\n    \"status\": \"success\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/blockchain/deposit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "blockchain",
+                "deposit"
+              ]
+            },
+            "description": "Simulate a USDT (ERC20) deposit webhook from external service"
+          }
+        }
+      ],
+      "description": "Webhook endpoints for receiving blockchain transaction notifications from external services"
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Unauthorized Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates unauthorized', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('Unauthorized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "addresses"
+              ]
+            },
+            "description": "Test unauthorized access to protected endpoint"
+          }
+        },
+        {
+          "name": "Invalid UUID Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates invalid format', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('Invalid');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits/invalid-uuid-format",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits",
+                "invalid-uuid-format"
+              ]
+            },
+            "description": "Test error handling for invalid UUID format"
+          }
+        }
+      ],
+      "description": "Test cases for error handling scenarios"
+    }
+  ]
+}

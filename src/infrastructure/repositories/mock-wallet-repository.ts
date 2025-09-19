@@ -66,6 +66,12 @@ export class MockWalletRepository implements WalletRepository {
     return [];
   }
 
+  async getAllUserAddresses(_tokenSymbol: string): Promise<{ userId: string; address: string; tokenSymbol: string; tokenBalance: number }[]> {
+    // In a real implementation, this would query the database
+    // For mock purposes, return empty array
+    return [];
+  }
+
   async createTransaction(transactionData: {
     userId: string;
     transactionType: string;

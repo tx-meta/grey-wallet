@@ -12,12 +12,15 @@ import { NotificationService } from '../application/interfaces/notification-serv
 import { CryptoService } from '../application/interfaces/crypto-service';
 import { TreasuryService } from '../application/interfaces/treasury-service';
 import { B2BPaymentService } from '../application/interfaces/b2b-payment-service';
+import { DepositRepository } from '../domain/repositories/deposit-repository';
 
 // Import implementations
 import { MockUserRepository } from './repositories/mock-user-repository';
 import { MockWalletRepository } from './repositories/mock-wallet-repository';
 import { MockTokenRepository } from './repositories/mock-token-repository';
 import { MockTermsOfServiceRepository } from './repositories/mock-terms-of-service-repository';
+import { MockDepositRepository } from './repositories/mock-deposit-repository';
+import { PrismaDepositRepository } from './repositories/prisma-deposit-repository';
 
 import { HashiCorpVaultService } from './services/hashicorp-vault-service';
 import { MockNotificationService } from './services/mock-notification-service';
@@ -26,6 +29,7 @@ import { MpesaPaymentService } from './services/mpesa-payment-service';
 import { CryptoQuoteServiceImpl } from './services/crypto-quote-service';
 import { TreasuryServiceImpl } from './services/treasury-service';
 import { B2BPaymentServiceImpl } from './services/b2b-payment-service';
+import { BlockchainMonitorService } from './services/blockchain/blockchain-monitor-service';
 import prisma from './database/prisma-client';
 
 // Import service factory
@@ -51,6 +55,9 @@ import { FinalizeCryptoPurchaseUseCase } from '../domain/use_cases/finalize-cryp
 import { DeleteUserAccountUseCase } from '../domain/use_cases/delete-user-account';
 import { CreateB2BPaymentQuoteUseCase } from '../domain/use_cases/create-b2b-payment-quote';
 import { FinalizeB2BPaymentUseCase } from '../domain/use_cases/finalize-b2b-payment';
+import { ProcessCryptoDepositUseCase } from '../domain/use_cases/process-crypto-deposit';
+import { GetDepositHistoryUseCase } from '../domain/use_cases/get-deposit-history';
+import { GetUserAddressesUseCase } from '../domain/use_cases/get-user-addresses';
 
 // Import controllers
 import { AuthController } from '../presentation/controllers/auth-controller';
@@ -62,6 +69,8 @@ import { CryptoQuoteController } from '../presentation/controllers/crypto-quote-
 import { SellCryptoController } from '../presentation/controllers/sell-crypto-controller';
 import { BuyCryptoController } from '../presentation/controllers/buy-crypto-controller';
 import { B2BPaymentController } from '../presentation/controllers/b2b-payment-controller';
+import { DepositController } from '../presentation/controllers/deposit-controller';
+import { BlockchainWebhookController } from '../presentation/controllers/blockchain-webhook-controller';
 
 // Import Supabase service
 import { SupabaseAuthService } from './external_apis/supabase-auth';
@@ -101,6 +110,7 @@ export class Container {
     this.services.set('WalletRepository', new MockWalletRepository());
     this.services.set('TokenRepository', new MockTokenRepository());
     this.services.set('TermsOfServiceRepository', new MockTermsOfServiceRepository());
+    this.services.set('DepositRepository', new MockDepositRepository());
 
     // Initialize mock services (except VaultService - always use real HashiCorp Vault)
     this.services.set('NotificationService', new MockNotificationService());
@@ -153,6 +163,14 @@ export class Container {
       this.services.set('TermsOfServiceRepository', new MockTermsOfServiceRepository());
     }
 
+    try {
+      this.services.set('DepositRepository', new PrismaDepositRepository(prisma));
+      console.log('✅ DepositRepository initialized with real implementation');
+    } catch (error) {
+      console.warn('⚠️  Real DepositRepository not available, using mock');
+      this.services.set('DepositRepository', new MockDepositRepository());
+    }
+
     // Initialize real services
     this.services.set('VaultService', new HashiCorpVaultService());
     
@@ -169,6 +187,14 @@ export class Container {
     this.services.set('CryptoQuoteService', new CryptoQuoteServiceImpl());
     this.services.set('TreasuryService', new TreasuryServiceImpl(prisma));
     this.services.set('B2BPaymentService', new B2BPaymentServiceImpl(this.services.get('CryptoQuoteService')));
+    
+    // Initialize Blockchain Monitor Service
+    this.services.set('BlockchainMonitorService', new BlockchainMonitorService(
+      this.services.get('WalletRepository'),
+      this.services.get('DepositRepository'),
+      this.services.get('NotificationService')
+    ));
+    console.log('✅ BlockchainMonitorService initialized');
   }
 
   public get<T>(serviceName: string): T {
@@ -458,12 +484,58 @@ export class Container {
     return this.get<B2BPaymentController>('B2BPaymentController');
   }
 
+  public getDepositController(): DepositController {
+    // Initialize deposit use cases if not already done
+    if (!this.services.has('GetDepositHistoryUseCase')) {
+      this.services.set('GetDepositHistoryUseCase', new GetDepositHistoryUseCase(
+        this.services.get('DepositRepository'),
+        this.services.get('UserRepository')
+      ));
+    }
+
+    if (!this.services.has('GetUserAddressesUseCase')) {
+      this.services.set('GetUserAddressesUseCase', new GetUserAddressesUseCase(
+        this.services.get('WalletRepository'),
+        this.services.get('UserRepository')
+      ));
+    }
+
+    if (!this.services.has('DepositController')) {
+      this.services.set('DepositController', new DepositController(
+        this.services.get('GetDepositHistoryUseCase'),
+        this.services.get('GetUserAddressesUseCase')
+      ));
+    }
+
+    return this.get<DepositController>('DepositController');
+  }
+
+  public getBlockchainWebhookController(): BlockchainWebhookController {
+    // Initialize process crypto deposit use case if not already done
+    if (!this.services.has('ProcessCryptoDepositUseCase')) {
+      this.services.set('ProcessCryptoDepositUseCase', new ProcessCryptoDepositUseCase(
+        this.services.get('DepositRepository'),
+        this.services.get('WalletRepository'),
+        this.services.get('NotificationService')
+      ));
+    }
+
+    if (!this.services.has('BlockchainWebhookController')) {
+      this.services.set('BlockchainWebhookController', new BlockchainWebhookController(
+        this.services.get('ProcessCryptoDepositUseCase')
+      ));
+    }
+
+    return this.get<BlockchainWebhookController>('BlockchainWebhookController');
+  }
+
   public getRepositories() {
     return {
       userRepository: this.get<UserRepository>('UserRepository'),
       walletRepository: this.get<WalletRepository>('WalletRepository'),
       tokenRepository: this.get<TokenRepository>('TokenRepository'),
       termsOfServiceRepository: this.get<TermsOfServiceRepository>('TermsOfServiceRepository'),
+      depositRepository: this.get<DepositRepository>('DepositRepository'),
     };
   }
 
@@ -475,6 +547,7 @@ export class Container {
       paymentService: this.get<MpesaPaymentService>('PaymentService'),
       treasuryService: this.get<TreasuryService>('TreasuryService'),
       b2bPaymentService: this.get<B2BPaymentService>('B2BPaymentService'),
+      blockchainMonitorService: this.get<BlockchainMonitorService>('BlockchainMonitorService'),
     };
   }
 }
@@ -509,6 +582,8 @@ export default {
   get sellCryptoController() { return containerInstance.getSellCryptoController(); },
   get buyCryptoController() { return containerInstance.getBuyCryptoController(); },
   get b2bPaymentController() { return containerInstance.getB2BPaymentController(); },
+  get depositController() { return containerInstance.getDepositController(); },
+  get blockchainWebhookController() { return containerInstance.getBlockchainWebhookController(); },
   
   // Middleware
   get authMiddleware() { return containerInstance.getAuthMiddleware(); }

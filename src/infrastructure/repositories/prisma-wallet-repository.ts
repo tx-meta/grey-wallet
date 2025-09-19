@@ -122,6 +122,26 @@ export class PrismaWalletRepository implements WalletRepository {
     }));
   }
 
+  async getAllUserAddresses(tokenSymbol: string): Promise<{ userId: string; address: string; tokenSymbol: string; tokenBalance: number }[]> {
+    const userAddresses = await prisma.userAddress.findMany({
+      where: {
+        wallet: {
+          tokenSymbol: tokenSymbol
+        }
+      },
+      include: {
+        wallet: true,
+      },
+    });
+
+    return userAddresses.map((ua: any) => ({
+      userId: ua.userId,
+      address: ua.address,
+      tokenSymbol: ua.wallet.tokenSymbol,
+      tokenBalance: ua.tokenBalance,
+    }));
+  }
+
   async createTransaction(transactionData: {
     userId: string;
     transactionType: string;

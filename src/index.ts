@@ -24,6 +24,8 @@ import sellCryptoRoutes from './presentation/routes/sell-crypto-routes';
 import buyCryptoRoutes from './presentation/routes/buy-crypto-routes';
 import b2bPaymentRoutes from './presentation/routes/b2b-payment-routes';
 import mpesaCallbackRoutes from './presentation/routes/mpesa-callback-routes';
+import depositRoutes from './presentation/routes/deposit-routes';
+import blockchainWebhookRoutes from './presentation/routes/blockchain-webhook-routes';
 import { createTermsRoutes } from './presentation/routes/terms-routes';
 import { createTestSMSRoutes } from './presentation/routes/test-sms-routes';
 import { createAdminRoutes } from './presentation/routes/admin-routes';
@@ -113,6 +115,8 @@ class App {
     this.app.use('/api/buy/crypto', buyCryptoRoutes);
     this.app.use('/api/payments/b2b', b2bPaymentRoutes);
     this.app.use('/api/mpesa/callback', mpesaCallbackRoutes);
+    this.app.use('/api/deposits', depositRoutes);
+    this.app.use('/api/webhooks/blockchain', blockchainWebhookRoutes);
     
     // Terms of service routes
     const container = require('./infrastructure/container').container;
@@ -171,6 +175,20 @@ seedDatabase()
   .finally(() => {
     // Start the server regardless of seeding result
     app.listen();
+    
+    // Start blockchain monitoring after server starts
+    const container = require('./infrastructure/container').container;
+    const blockchainMonitorService = container.getServices().blockchainMonitorService;
+    
+    blockchainMonitorService.startAll()
+      .then(() => {
+        logger.info('All blockchain listeners started successfully');
+      })
+      .catch((error: any) => {
+        logger.error('Failed to start blockchain listeners', { 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      });
   });
 
 // Graceful shutdown
