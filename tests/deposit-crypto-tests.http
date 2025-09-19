@@ -22,8 +22,8 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "harunm28@gmail.com",
-  "password": "TestPassword123!"
+  "email": "muhindi.kn@gmail.com",
+  "password": "SecurePass123"
 }
 
 ### ========================================
